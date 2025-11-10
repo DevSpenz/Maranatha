@@ -1,11 +1,12 @@
-import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
+import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import React from "react";
 
-interface DashboardShellProps {
+interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />

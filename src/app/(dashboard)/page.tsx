@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { DollarSign, Users, Wallet, BookOpen, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,80 +103,76 @@ export default function Home() {
   if (isLoadingData) {
     // Show a loading state while fetching data
     return (
-      <DashboardShell>
-        <div className="flex min-h-[50vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardShell>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-        
-        {/* Metric Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard
-              key={metric.title}
-              title={metric.title}
-              value={metric.value}
-              description={metric.description}
-              Icon={metric.Icon}
-            />
-          ))}
-        </div>
-
-        {/* Recent Activities & Financial Summary */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Recent Disbursements</CardTitle>
-              <CardDescription>
-                Latest fund allocations to groups and beneficiaries.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-                {/* Placeholder for a table or list of recent transactions */}
-                Recent transaction list placeholder
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Financial Summary</CardTitle>
-              <CardDescription>
-                Key balances from the Cashbook.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Main Cash Balance:</span>
-                <span className="text-sm font-semibold">{metrics.find(m => m.title === "Main Cash Balance")?.value || formatKes(0)}</span>
-              </div>
-              <Separator />
-              {groups.slice(0, 3).map(group => (
-                <div key={group.id} className="flex justify-between">
-                  <span className="text-sm font-medium">{group.name} Balance:</span>
-                  <span className="text-sm font-semibold">{formatKes(group.currentBalanceKes)}</span>
-                </div>
-              ))}
-              {groups.length > 3 && (
-                <div className="text-xs text-muted-foreground">...and {groups.length - 3} more groups</div>
-              )}
-              <Separator />
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total Group Balance:</span>
-                <span>{formatKes(groups.reduce((sum, g) => sum + g.currentBalanceKes, 0))}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+      
+      {/* Metric Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {metrics.map((metric) => (
+          <MetricCard
+            key={metric.title}
+            title={metric.title}
+            value={metric.value}
+            description={metric.description}
+            Icon={metric.Icon}
+          />
+        ))}
       </div>
-    </DashboardShell>
+
+      {/* Recent Activities & Financial Summary */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Disbursements</CardTitle>
+            <CardDescription>
+              Latest fund allocations to groups and beneficiaries.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+              {/* Placeholder for a table or list of recent transactions */}
+              Recent transaction list placeholder
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Financial Summary</CardTitle>
+            <CardDescription>
+              Key balances from the Cashbook.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">Main Cash Balance:</span>
+              <span className="text-sm font-semibold">{metrics.find(m => m.title === "Main Cash Balance")?.value || formatKes(0)}</span>
+            </div>
+            <Separator />
+            {groups.slice(0, 3).map(group => (
+              <div key={group.id} className="flex justify-between">
+                <span className="text-sm font-medium">{group.name} Balance:</span>
+                <span className="text-sm font-semibold">{formatKes(group.currentBalanceKes)}</span>
+              </div>
+            ))}
+            {groups.length > 3 && (
+              <div className="text-xs text-muted-foreground">...and {groups.length - 3} more groups</div>
+            )}
+            <Separator />
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total Group Balance:</span>
+              <span>{formatKes(groups.reduce((sum, g) => sum + g.currentBalanceKes, 0))}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

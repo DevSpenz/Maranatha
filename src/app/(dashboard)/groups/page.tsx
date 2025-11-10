@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DollarSign, Percent, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -58,47 +57,45 @@ export default function GroupsPage() {
   }, [loadGroups]);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Group Management</h1>
-          <GroupFormDialog onSuccess={loadGroups} />
-        </div>
-
-        {/* Group Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {summary.map((s) => (
-            <MetricCard
-              key={s.title}
-              title={s.title}
-              value={s.value}
-              description={s.description}
-              Icon={s.Icon}
-            />
-          ))}
-        </div>
-
-        <Separator />
-        
-        {/* Group List Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Groups</CardTitle>
-            <CardDescription>
-              Manage group ratios, beneficiaries, and view balances.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-                <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <DataTable columns={columns} data={groups} />
-            )}
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Group Management</h1>
+        <GroupFormDialog onSuccess={loadGroups} />
       </div>
-    </DashboardShell>
+
+      {/* Group Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {summary.map((s) => (
+          <MetricCard
+            key={s.title}
+            title={s.title}
+            value={s.value}
+            description={s.description}
+            Icon={s.Icon}
+          />
+        ))}
+      </div>
+
+      <Separator />
+      
+      {/* Group List Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Groups</CardTitle>
+          <CardDescription>
+            Manage group ratios, beneficiaries, and view balances.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+          ) : (
+              <DataTable columns={columns} data={groups} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

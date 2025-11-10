@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
@@ -46,34 +45,32 @@ export default function BeneficiariesPage() {
   }, {} as Record<string, string>);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Beneficiary Management</h1>
-          <BeneficiaryFormDialog onSuccess={loadData} />
-        </div>
-
-        <Separator />
-
-        {/* Beneficiary List Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Registered Beneficiaries ({beneficiaries.length})</CardTitle>
-            <CardDescription>
-              Filter and manage the status of all beneficiaries.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-                <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <DataTable columns={columns(groupMap)} data={beneficiaries} />
-            )}
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Beneficiary Management</h1>
+        <BeneficiaryFormDialog onSuccess={loadData} />
       </div>
-    </DashboardShell>
+
+      <Separator />
+
+      {/* Beneficiary List Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registered Beneficiaries ({beneficiaries.length})</CardTitle>
+          <CardDescription>
+            Filter and manage the status of all beneficiaries.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+          ) : (
+              <DataTable columns={columns(groupMap)} data={beneficiaries} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

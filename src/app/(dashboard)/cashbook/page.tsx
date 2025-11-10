@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,69 +69,67 @@ export default function CashbookPage() {
   }, [loadData]);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Cashbook & Ledger</h1>
-        
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {summary.map((s) => (
-            <MetricCard
-              key={s.title}
-              title={s.title}
-              value={s.value}
-              description={s.description}
-              Icon={s.Icon}
-            />
-          ))}
-        </div>
-
-        <Separator />
-        
-        {/* Tabs for Cashbook and General Ledger */}
-        <Tabs defaultValue="cashbook" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-            <TabsTrigger value="cashbook">Cashbook</TabsTrigger>
-            <TabsTrigger value="ledger">General Ledger</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="cashbook" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Cashbook Entries</CardTitle>
-                <CardDescription>
-                  Detailed record of all cash inflows (Donations) and outflows (Disbursements).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                    <div className="h-[400px] flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <DataTable columns={cashbookColumns} data={cashbookEntries} />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="ledger" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>General Ledger</CardTitle>
-                <CardDescription>
-                  View transactions grouped by account (e.g., Donations, Group A Funds, Main Cash).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                  General Ledger View Placeholder
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight">Cashbook & Ledger</h1>
+      
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {summary.map((s) => (
+          <MetricCard
+            key={s.title}
+            title={s.title}
+            value={s.value}
+            description={s.description}
+            Icon={s.Icon}
+          />
+        ))}
       </div>
-    </DashboardShell>
+
+      <Separator />
+      
+      {/* Tabs for Cashbook and General Ledger */}
+      <Tabs defaultValue="cashbook" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+          <TabsTrigger value="cashbook">Cashbook</TabsTrigger>
+          <TabsTrigger value="ledger">General Ledger</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="cashbook" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cashbook Entries</CardTitle>
+              <CardDescription>
+                Detailed record of all cash inflows (Donations) and outflows (Disbursements).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                  <div className="h-[400px] flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+              ) : (
+                  <DataTable columns={cashbookColumns} data={cashbookEntries} />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="ledger" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>General Ledger</CardTitle>
+              <CardDescription>
+                View transactions grouped by account (e.g., Donations, Group A Funds, Main Cash).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                General Ledger View Placeholder
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

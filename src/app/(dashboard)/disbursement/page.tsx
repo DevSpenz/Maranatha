@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DollarSign, TrendingDown, Users, Loader2 } from "lucide-react";
@@ -77,47 +76,45 @@ export default function DisbursementPage() {
   }, [loadDisbursements]);
 
   return (
-    <DashboardShell>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight">Fund Disbursement</h1>
-            <DisbursementFormDialog onSuccess={loadDisbursements} />
-        </div>
-        
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {summary.map((s) => (
-            <MetricCard
-              key={s.title}
-              title={s.title}
-              value={s.value}
-              description={s.description}
-              Icon={s.Icon}
-            />
-          ))}
-        </div>
-
-        <Separator />
-        
-        {/* Disbursement History Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Disbursement History</CardTitle>
-            <CardDescription>
-              A record of all funds allocated from the main account to beneficiary groups.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-                <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <DataTable columns={columns} data={disbursements} />
-            )}
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Fund Disbursement</h1>
+          <DisbursementFormDialog onSuccess={loadDisbursements} />
       </div>
-    </DashboardShell>
+      
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {summary.map((s) => (
+          <MetricCard
+            key={s.title}
+            title={s.title}
+            value={s.value}
+            description={s.description}
+            Icon={s.Icon}
+          />
+        ))}
+      </div>
+
+      <Separator />
+      
+      {/* Disbursement History Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Disbursement History</CardTitle>
+          <CardDescription>
+            A record of all funds allocated from the main account to beneficiary groups.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+          ) : (
+              <DataTable columns={columns} data={disbursements} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
