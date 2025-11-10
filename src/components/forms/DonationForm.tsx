@@ -18,7 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { DatePicker } from "./DatePicker";
-import { format } from "date-fns";
+import { useSession } from "@/components/auth/SessionContextProvider";
+import { createDonation } from "@/lib/data/donations";
 
 // --- Zod Schema Definition ---
 const DonationSchema = z.object({
@@ -38,16 +39,12 @@ const DonationSchema = z.object({
 
 type DonationFormValues = z.infer<typeof DonationSchema>;
 
-// Mock submission function
-const mockSubmitDonation = async (data: DonationFormValues) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    const kesAmount = data.sekAmount * data.exchangeRate;
-    console.log("Donation Recorded:", { ...data, kesAmount, dateReceived: format(data.dateReceived, 'yyyy-MM-dd') });
-    return { success: true, kesAmount };
-};
+interface DonationFormProps {
+    onDonationCreated: () => void;
+}
 
-
-export function DonationForm() {
+export function DonationForm({ onDonationCreated }: DonationFormProps) {
+  const { user } = useSession();
   const [kesAmount, setKesAmount] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -75,16 +72,26 @@ export function DonationForm() {
 
 
   async function onSubmit(data: DonationFormValues) {
+    if (!user) {
+        toast.error("Authentication required to record a donation.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
-        const result = await mockSubmitDonation(data);
-        toast.success(`Donation of KSh ${result.kesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} recorded successfully!`);
+        const result = await createDonation({
+            ...data,
+            user_id: user.id,
+        });
+        
+        toast.success(`Donation of KSh ${result.kes_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} recorded successfully!`);
         form.reset({
             donorName: "",
             sekAmount: 0,
             exchangeRate: data.exchangeRate, // Keep rate for convenience
             dateReceived: new Date(),
         });
+        onDonationCreated();
     } catch (error) {
         toast.error("Failed to record donation.");
     } finally {

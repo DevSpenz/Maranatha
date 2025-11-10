@@ -1,57 +1,51 @@
+"use client";
+
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { DonationForm } from "@/components/forms/DonationForm";
 import { DataTable } from "@/components/data-table/DataTable";
 import { columns } from "./columns";
 import { Donation } from "@/types";
-
-// Mock Data for Donation History
-const mockDonations: Donation[] = [
-    {
-        id: "d1",
-        donorName: "Swedish Church Aid",
-        sekAmount: 50000,
-        exchangeRate: 12.10,
-        kesAmount: 50000 * 12.10,
-        dateReceived: new Date(2024, 6, 15), // July 15th
-        recordedAt: new Date(2024, 6, 16),
-    },
-    {
-        id: "d2",
-        donorName: "Private Donor A",
-        sekAmount: 10000,
-        exchangeRate: 11.95,
-        kesAmount: 10000 * 11.95,
-        dateReceived: new Date(2024, 5, 20), // June 20th
-        recordedAt: new Date(2024, 5, 21),
-    },
-    {
-        id: "d3",
-        donorName: "EU Grant Fund",
-        sekAmount: 40000,
-        exchangeRate: 12.05,
-        kesAmount: 40000 * 12.05,
-        dateReceived: new Date(2024, 4, 1), // May 1st
-        recordedAt: new Date(2024, 4, 2),
-    },
-];
+import { useState, useEffect, useCallback } from "react";
+import { fetchDonations } from "@/lib/data/donations";
+import { toast } from "sonner";
 
 export default function DonorsPage() {
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadDonations = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedDonations = await fetchDonations();
+      setDonations(fetchedDonations);
+    } catch (error) {
+      toast.error("Failed to load donation history.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDonations();
+  }, [loadDonations]);
+
   return (
     <DashboardShell>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Donor Management</h1>
-          <Button>
+          <Button onClick={() => { /* Placeholder for future dialog/scroll */ }}>
             <PlusCircle className="mr-2 h-4 w-4" /> Record New Donation
           </Button>
         </div>
 
         {/* New Donation Form Card */}
-        <DonationForm />
+        <DonationForm onDonationCreated={loadDonations} />
 
         <Separator />
 
@@ -64,7 +58,13 @@ export default function DonorsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={mockDonations} />
+            {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <DataTable columns={columns} data={donations} />
+            )}
           </CardContent>
         </Card>
       </div>
