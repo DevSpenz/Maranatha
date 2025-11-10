@@ -21,6 +21,7 @@ export interface Group {
   description: string;
   disbursementRatio: number; // Percentage, e.g., 0.20 for 20%
   currentBalanceKes: number;
+  beneficiaryCount: number; // Added for display
 }
 
 export interface Beneficiary {
