@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react"; // Import React explicitly for React.use
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, User, Calendar, Phone, Home, Trash2, Edit, Download } from "lucide-react";
@@ -24,7 +25,10 @@ interface BeneficiaryDetailPageProps {
 }
 
 export default function BeneficiaryDetailPage({ params }: BeneficiaryDetailPageProps) {
-    const beneficiaryId = params.id;
+    // Unwrap params using React.use()
+    const unwrappedParams = React.use(params);
+    const beneficiaryId = unwrappedParams.id;
+    
     const [beneficiary, setBeneficiary] = useState<Beneficiary | null>(null);
     const [payments, setPayments] = useState<BeneficiaryPayment[]>([]);
     const [isLoading, setIsLoading] = useState(true);

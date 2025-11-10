@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react"; // Import React explicitly for React.use
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Users, DollarSign, Percent, Home, TrendingDown } from "lucide-react";
@@ -25,7 +26,10 @@ interface GroupDetailPageProps {
 }
 
 export default function GroupDetailPage({ params }: GroupDetailPageProps) {
-    const groupId = params.id;
+    // Unwrap params using React.use()
+    const unwrappedParams = React.use(params);
+    const groupId = unwrappedParams.id;
+    
     const [group, setGroup] = useState<Group | null>(null);
     const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
     const [payments, setPayments] = useState<BeneficiaryPayment[]>([]);
