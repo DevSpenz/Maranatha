@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, User, ChevronDown, Globe } from "lucide-react";
+import { Search, User, ChevronDown, Globe, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -14,6 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "../theme-toggle";
+import { useSession } from "@/components/auth/SessionContextProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Placeholder for language selector
 const LanguageSelector = () => (
@@ -32,29 +35,47 @@ const LanguageSelector = () => (
   </DropdownMenu>
 );
 
-// Placeholder for user profile
-const UserProfile = () => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" className="flex items-center gap-2">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-primary text-primary-foreground text-sm">MR</AvatarFallback>
-        </Avatar>
-        <div className="hidden md:block text-left">
-          <p className="text-sm font-medium leading-none">Moni Roy</p>
-          <p className="text-xs text-muted-foreground">Admin</p>
-        </div>
-        <ChevronDown className="h-4 w-4 opacity-50" />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuLabel>My Account</DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem>Settings</DropdownMenuItem>
-      <DropdownMenuItem>Logout</DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+// Functional User Profile with Logout
+const UserProfile = () => {
+  const { user } = useSession();
+  
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Failed to log out.");
+      console.error("Logout error:", error);
+    }
+    // Redirection is handled by useAuthGuard
+  };
+
+  const initials = user?.email ? user.email.substring(0, 2).toUpperCase() : '??';
+  const email = user?.email || 'Guest';
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="hidden md:block text-left">
+            <p className="text-sm font-medium leading-none">{email}</p>
+            <p className="text-xs text-muted-foreground">User</p>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>Settings</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout} className="text-destructive flex items-center">
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export function Header() {
   return (

@@ -1,8 +1,12 @@
+"use client";
+
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { DollarSign, Users, Wallet, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { Loader2 } from "lucide-react";
 
 // Mock Data for demonstration
 const mockMetrics = [
@@ -33,6 +37,17 @@ const mockMetrics = [
 ];
 
 export default function Home() {
+  const { isLoading, user } = useAuthGuard();
+
+  if (isLoading || !user) {
+    // Show a loading state while checking auth or if redirecting
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <DashboardShell>
       <div className="space-y-6">
