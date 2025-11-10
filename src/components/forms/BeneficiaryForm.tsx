@@ -6,6 +6,7 @@ import * as z from "zod";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -20,9 +21,9 @@ import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSession } from "@/components/auth/SessionContextProvider";
 import { fetchGroups } from "@/lib/data/groups";
-import { Group } from "@/types";
-import { createBeneficiary } from "@/lib/data/beneficiaries";
-import { DatePicker } from "@/components/forms/DatePicker"; // Import DatePicker
+import { Group, Beneficiary } from "@/types";
+import { createBeneficiary, updateBeneficiary } from "@/lib/data/beneficiaries";
+import { DatePicker } from "@/components/forms/DatePicker";
 
 // --- Zod Schema Definition ---
 const BeneficiarySchema = z.object({
@@ -49,28 +50,31 @@ type BeneficiaryFormValues = z.infer<typeof BeneficiarySchema>;
 
 interface BeneficiaryFormProps {
     onBeneficiaryCreated: () => void;
+    initialData?: Beneficiary;
 }
 
-export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) {
+export function BeneficiaryForm({ onBeneficiaryCreated, initialData }: BeneficiaryFormProps) {
   const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(true);
+  
+  const isEditMode = !!initialData;
 
   const form = useForm<BeneficiaryFormValues>({
     resolver: zodResolver(BeneficiarySchema),
     defaultValues: {
-      fullName: "",
-      sponsorNumber: "",
-      idNumber: "",
-      dateOfBirth: new Date(), // Use Date object now
-      phoneNumber: "",
-      gender: undefined,
-      guardianName: "",
-      guardianPhone: "",
-      guardianId: "",
-      status: "active",
-      groupId: undefined,
+      fullName: initialData?.fullName || "",
+      sponsorNumber: initialData?.sponsorNumber || "",
+      idNumber: initialData?.idNumber || "",
+      dateOfBirth: initialData?.dateOfBirth || new Date(),
+      phoneNumber: initialData?.phoneNumber || "",
+      gender: initialData?.gender,
+      guardianName: initialData?.guardianName || "",
+      guardianPhone: initialData?.guardianPhone || "",
+      guardianId: initialData?.guardianId || "",
+      status: initialData?.status || "active",
+      groupId: initialData?.groupId,
     },
   });
 
@@ -90,50 +94,58 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
 
   async function onSubmit(data: BeneficiaryFormValues) {
     if (!user) {
-        toast.error("Authentication required to register a beneficiary.");
+        toast.error("Authentication required to save changes.");
         return;
     }
 
     setIsSubmitting(true);
     try {
-        await createBeneficiary({
-            ...data,
-            dateOfBirth: data.dateOfBirth, // Already a Date object
-            user_id: user.id,
-        });
+        if (isEditMode && initialData) {
+            await updateBeneficiary(initialData.id, {
+                ...data,
+                dateOfBirth: data.dateOfBirth,
+            });
+            toast.success(`Beneficiary '${data.fullName}' updated successfully!`);
+        } else {
+            await createBeneficiary({
+                ...data,
+                dateOfBirth: data.dateOfBirth,
+                user_id: user.id,
+            });
+            toast.success(`Beneficiary '${data.fullName}' registered successfully!`);
+            form.reset({
+                fullName: "",
+                sponsorNumber: "",
+                idNumber: "",
+                dateOfBirth: new Date(),
+                phoneNumber: "",
+                gender: undefined,
+                guardianName: "",
+                guardianPhone: "",
+                guardianId: "",
+                status: "active",
+                groupId: undefined,
+            });
+        }
         
-        toast.success(`Beneficiary '${data.fullName}' registered successfully!`);
-        form.reset({
-            fullName: "",
-            sponsorNumber: "",
-            idNumber: "",
-            dateOfBirth: new Date(),
-            phoneNumber: "",
-            gender: undefined,
-            guardianName: "",
-            guardianPhone: "",
-            guardianId: "",
-            status: "active",
-            groupId: undefined,
-        });
         onBeneficiaryCreated();
     } catch (error) {
         console.error(error);
-        toast.error("Failed to register beneficiary. Check if sponsor number is unique.");
+        toast.error(isEditMode ? "Failed to update beneficiary. Check if sponsor number is unique." : "Failed to register beneficiary. Check if sponsor number is unique.");
     } finally {
         setIsSubmitting(false);
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={isEditMode ? "border-none shadow-none" : ""}>
+      <CardHeader className={isEditMode ? "hidden" : ""}>
         <CardTitle>Register New Beneficiary</CardTitle>
         <CardDescription>
           Capture required details for a new beneficiary.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isEditMode ? "p-0" : ""}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             
@@ -161,7 +173,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
                 <FormItem>
                   <FormLabel>Sponsor Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="SPN-12345" {...field} />
+                    <Input placeholder="SPN-12345" {...field} disabled={isEditMode} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -220,7 +232,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select Gender" />
@@ -291,7 +303,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select Status" />
@@ -339,7 +351,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
                 ) : (
                     <Save className="mr-2 h-4 w-4" />
                 )}
-                {isSubmitting ? "Registering..." : "Save Beneficiary"}
+                {isSubmitting ? (isEditMode ? "Saving Changes..." : "Registering...") : (isEditMode ? "Save Changes" : "Save Beneficiary")}
               </Button>
             </div>
           </form>

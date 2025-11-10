@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, User, Calendar, Phone, Mail, Home, Trash2, Edit } from "lucide-react";
+import { Loader2, User, Calendar, Phone, Home, Trash2, Edit, Download } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { fetchBeneficiaryById } from "@/lib/data/beneficiaries";
 import { fetchBeneficiaryPayments } from "@/lib/data/beneficiary-payments";
@@ -14,7 +14,8 @@ import { paymentColumns } from "@/app/beneficiaries/payment-columns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { exportToCsv } from "@/lib/export-utils";
+import { BeneficiaryEditDialog } from "@/components/dialogs/BeneficiaryEditDialog"; // Import Edit Dialog
 
 interface BeneficiaryDetailPageProps {
     params: {
@@ -49,6 +50,14 @@ export default function BeneficiaryDetailPage({ params }: BeneficiaryDetailPageP
     useEffect(() => {
         loadData();
     }, [loadData]);
+    
+    const handleExport = () => {
+        if (beneficiary) {
+            const filename = `${beneficiary.fullName.replace(/\s/g, '_')}_payments_${format(new Date(), 'yyyyMMdd')}.csv`;
+            exportToCsv(payments, filename);
+            toast.info("Exporting payment history...");
+        }
+    };
 
     if (isLoading) {
         return (
@@ -79,9 +88,10 @@ export default function BeneficiaryDetailPage({ params }: BeneficiaryDetailPageP
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">{beneficiary.fullName}</h1>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                    </Button>
+                    <BeneficiaryEditDialog 
+                        beneficiaryId={beneficiary.id} 
+                        onSuccess={loadData} 
+                    />
                     <Button variant="destructive" size="sm">
                         <Trash2 className="mr-2 h-4 w-4" /> Remove
                     </Button>
@@ -134,11 +144,16 @@ export default function BeneficiaryDetailPage({ params }: BeneficiaryDetailPageP
 
             {/* Payment History */}
             <Card>
-                <CardHeader>
-                    <CardTitle>Payment History ({payments.length})</CardTitle>
-                    <CardDescription>
-                        All funds disbursed directly to this beneficiary.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <div>
+                        <CardTitle>Payment History ({payments.length})</CardTitle>
+                        <CardDescription>
+                            All funds disbursed directly to this beneficiary.
+                        </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleExport} disabled={payments.length === 0}>
+                        <Download className="mr-2 h-4 w-4" /> Export CSV
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     <DataTable columns={paymentColumns} data={payments} />

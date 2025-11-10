@@ -88,6 +88,36 @@ export async function createBeneficiary(beneficiaryData: Omit<Beneficiary, 'id' 
 }
 
 /**
+ * Updates an existing beneficiary entry in the database.
+ */
+export async function updateBeneficiary(beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id' | 'dateOfBirth'> & { dateOfBirth: Date }) {
+    // Note: user_id is not updated here as it's typically immutable after creation
+    const { error } = await supabase
+        .from('beneficiaries')
+        .update({
+            group_id: beneficiaryData.groupId,
+            sponsor_number: beneficiaryData.sponsorNumber,
+            full_name: beneficiaryData.fullName,
+            id_number: beneficiaryData.idNumber,
+            date_of_birth: beneficiaryData.dateOfBirth.toISOString().split('T')[0],
+            phone_number: beneficiaryData.phoneNumber,
+            gender: beneficiaryData.gender,
+            guardian_name: beneficiaryData.guardianName,
+            guardian_phone: beneficiaryData.guardianPhone,
+            guardian_id: beneficiaryData.guardianId,
+            status: beneficiaryData.status,
+        })
+        .eq('id', beneficiaryId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error updating beneficiary:", error);
+        throw new Error("Failed to update beneficiary profile.");
+    }
+}
+
+/**
  * Deletes a beneficiary by their ID.
  */
 export async function deleteBeneficiary(beneficiaryId: string) {

@@ -20,13 +20,15 @@ import { useState } from "react";
 import { deleteBeneficiary } from "@/lib/data/beneficiaries";
 import { toast } from "sonner";
 import Link from "next/link";
+import { BeneficiaryEditDialog } from "@/components/dialogs/BeneficiaryEditDialog"; // Import Edit Dialog
 
 interface BeneficiaryActionsProps {
     beneficiary: Beneficiary;
     onBeneficiaryDeleted: () => void;
+    onBeneficiaryUpdated: () => void; // New prop for refresh
 }
 
-const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted }: BeneficiaryActionsProps) => {
+const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted, onBeneficiaryUpdated }: BeneficiaryActionsProps) => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const handleDelete = async () => {
@@ -62,9 +64,17 @@ const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted }: BeneficiaryAc
                         Copy Beneficiary ID
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center">
-                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                    </DropdownMenuItem>
+                    
+                    <BeneficiaryEditDialog 
+                        beneficiaryId={beneficiary.id} 
+                        onSuccess={onBeneficiaryUpdated}
+                        trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                            </DropdownMenuItem>
+                        }
+                    />
+
                     <DropdownMenuItem 
                         className="flex items-center text-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
@@ -88,7 +98,7 @@ const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted }: BeneficiaryAc
 
 
 // Define a function that returns the columns, accepting the group map and delete callback
-export const columns = (groupMap: Record<string, string>, onBeneficiaryDeleted: () => void): ColumnDef<Beneficiary>[] => [
+export const columns = (groupMap: Record<string, string>, onBeneficiaryUpdated: () => void): ColumnDef<Beneficiary>[] => [
   {
     accessorKey: "fullName",
     header: ({ column }) => {
@@ -158,7 +168,7 @@ export const columns = (groupMap: Record<string, string>, onBeneficiaryDeleted: 
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      return <BeneficiaryActions beneficiary={row.original} onBeneficiaryDeleted={onBeneficiaryDeleted} />;
+      return <BeneficiaryActions beneficiary={row.original} onBeneficiaryDeleted={onBeneficiaryUpdated} onBeneficiaryUpdated={onBeneficiaryUpdated} />;
     },
   },
 ];
