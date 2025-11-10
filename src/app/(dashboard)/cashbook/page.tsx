@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/DataTable";
 import { cashbookColumns } from "@/app/cashbook/cashbook-columns";
 import { CashbookEntry } from "@/types";
+import { GeneralLedgerView } from "@/components/cashbook/GeneralLedgerView"; // Import the new component
 
 // Initial state for summary cards while loading
 const initialCashbookSummary = [
@@ -117,15 +118,19 @@ export default function CashbookPage() {
         <TabsContent value="ledger" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>General Ledger</CardTitle>
+              <CardTitle>General Ledger View</CardTitle>
               <CardDescription>
-                View transactions grouped by account (e.g., Donations, Group A Funds, Main Cash).
+                View the running balance of the Main Cash Account (unallocated funds).
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                General Ledger View Placeholder
-              </div>
+              {isLoading ? (
+                  <div className="h-[400px] flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+              ) : (
+                  <GeneralLedgerView cashbookEntries={cashbookEntries} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
