@@ -142,3 +142,30 @@ export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<B
         recordedAt: new Date(p.created_at),
     })) as BeneficiaryPayment[];
 }
+
+/**
+ * Fetches the total amount paid out from all groups, aggregated by group ID.
+ * Returns a map: { [groupId: string]: totalPaidKes }
+ */
+export async function fetchTotalPaymentsByAllGroups(): Promise<Record<string, number>> {
+    // Use a database view or RPC function for efficient aggregation if possible.
+    // Since we don't have a view, we'll fetch all payments and aggregate client-side for now.
+    const { data, error } = await supabase
+        .from('beneficiary_payments')
+        .select('group_id, amount_kes');
+
+    if (error) {
+        console.error("Error fetching all payments for aggregation:", error);
+        throw new Error("Failed to calculate total group payments summary.");
+    }
+
+    const paymentMap: Record<string, number> = {};
+    
+    data.forEach(p => {
+        const amount = parseFloat(p.amount_kes.toString());
+        const groupId = p.group_id;
+        paymentMap[groupId] = (paymentMap[groupId] || 0) + amount;
+    });
+
+    return paymentMap;
+}
