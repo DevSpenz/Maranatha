@@ -22,14 +22,15 @@ import { useSession } from "@/components/auth/SessionContextProvider";
 import { fetchGroups } from "@/lib/data/groups";
 import { Group } from "@/types";
 import { createBeneficiary } from "@/lib/data/beneficiaries";
+import { DatePicker } from "@/components/forms/DatePicker"; // Import DatePicker
 
 // --- Zod Schema Definition ---
 const BeneficiarySchema = z.object({
   fullName: z.string().min(2, { message: "Full name is required." }),
   sponsorNumber: z.string().min(5, { message: "Sponsor number is required." }),
   idNumber: z.string().optional(),
-  dateOfBirth: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
-    message: "Invalid date format.",
+  dateOfBirth: z.date({
+    required_error: "Date of birth is required.",
   }),
   phoneNumber: z.string().min(10, { message: "Valid phone number is required." }),
   gender: z.enum(['male', 'female', 'other'], {
@@ -62,7 +63,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
       fullName: "",
       sponsorNumber: "",
       idNumber: "",
-      dateOfBirth: new Date().toISOString().split('T')[0],
+      dateOfBirth: new Date(), // Use Date object now
       phoneNumber: "",
       gender: undefined,
       guardianName: "",
@@ -97,7 +98,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
     try {
         await createBeneficiary({
             ...data,
-            dateOfBirth: new Date(data.dateOfBirth),
+            dateOfBirth: data.dateOfBirth, // Already a Date object
             user_id: user.id,
         });
         
@@ -106,7 +107,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
             fullName: "",
             sponsorNumber: "",
             idNumber: "",
-            dateOfBirth: new Date().toISOString().split('T')[0],
+            dateOfBirth: new Date(),
             phoneNumber: "",
             gender: undefined,
             guardianName: "",
@@ -188,7 +189,11 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker 
+                        date={field.value} 
+                        setDate={field.onChange} 
+                        placeholder="Select D.O.B"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -309,7 +314,7 @@ export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assigned Group</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isGroupsLoading}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isGroupsLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={isGroupsLoading ? "Loading groups..." : "Select Group"} />
