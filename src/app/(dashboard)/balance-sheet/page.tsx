@@ -15,6 +15,7 @@ export default function BalanceSheetPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Balance Sheet is always calculated as of today, no date filtering needed here.
       const fetchedData = await fetchBalanceSheetData();
       setData(fetchedData);
     } catch (error) {
@@ -36,6 +37,18 @@ export default function BalanceSheetPage() {
           <h1 className="text-3xl font-bold tracking-tight">Balance Sheet</h1>
       </div>
       
+      <Card>
+        <CardHeader>
+          <CardTitle>Report Date</CardTitle>
+          <CardDescription>
+            This report reflects the financial position as of today.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-lg font-semibold">{new Date().toLocaleDateString()}</p>
+        </CardContent>
+      </Card>
+
       {isLoading ? (
           <Card className="h-[500px] flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -51,17 +64,6 @@ export default function BalanceSheetPage() {
       )}
       
       <Separator />
-      
-      <Card>
-          <CardHeader>
-              <CardTitle>Report Options</CardTitle>
-          </CardHeader>
-          <CardContent>
-              <div className="text-muted-foreground">
-                  Date selection and export options placeholder.
-              </div>
-          </CardContent>
-      </Card>
     </div>
   );
 }

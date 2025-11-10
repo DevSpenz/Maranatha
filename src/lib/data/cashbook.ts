@@ -23,14 +23,32 @@ export interface BalanceSheetData {
     accumulatedFundBalance: number; // Should equal totalAssets in this simplified model
 }
 
+// Helper function to apply date filters to a query builder
+function applyDateFilter(query: any, dateColumn: string, startDate?: Date, endDate?: Date) {
+    if (startDate) {
+        query = query.gte(dateColumn, startDate.toISOString().split('T')[0]);
+    }
+    if (endDate) {
+        query = query.lte(dateColumn, endDate.toISOString().split('T')[0]);
+    }
+    return query;
+}
+
 /**
  * Fetches and calculates the overall financial summary metrics.
+ * If startDate and endDate are provided, it calculates the summary for that period.
+ * NOTE: MainCashBalance and TotalGroupBalance are always calculated as of today, 
+ * regardless of the date range, as they represent current balances.
  */
-export async function fetchFinancialSummary(): Promise<FinancialSummary> {
-    // 1. Calculate Total Donations (Cash In)
-    const { data: donationData, error: donationError } = await supabase
+export async function fetchFinancialSummary(startDate?: Date, endDate?: Date): Promise<FinancialSummary> {
+    // 1. Calculate Total Donations (Cash In) within the period
+    let donationQuery = supabase
         .from('donations')
         .select('kes_amount');
+    
+    donationQuery = applyDateFilter(donationQuery, 'date_received', startDate, endDate);
+
+    const { data: donationData, error: donationError } = await donationQuery;
 
     if (donationError) {
         console.error("Error fetching donations for summary:", donationError);
@@ -39,10 +57,14 @@ export async function fetchFinancialSummary(): Promise<FinancialSummary> {
 
     const totalDonationsKes = donationData.reduce((sum, d) => sum + parseFloat(d.kes_amount.toString()), 0);
 
-    // 2. Calculate Total Disbursements (Cash Out to Groups)
-    const { data: disbursementData, error: disbursementError } = await supabase
+    // 2. Calculate Total Disbursements (Cash Out to Groups) within the period
+    let disbursementQuery = supabase
         .from('disbursements')
         .select('amount_kes');
+        
+    disbursementQuery = applyDateFilter(disbursementQuery, 'date_disbursed', startDate, endDate);
+
+    const { data: disbursementData, error: disbursementError } = await disbursementQuery;
 
     if (disbursementError) {
         console.error("Error fetching disbursements for summary:", disbursementError);
@@ -51,10 +73,18 @@ export async function fetchFinancialSummary(): Promise<FinancialSummary> {
 
     const totalDisbursementsKes = disbursementData.reduce((sum, d) => sum + parseFloat(d.amount_kes.toString()), 0);
 
-    // 3. Calculate Main Cash Balance (Funds not yet allocated to groups)
-    const mainCashBalance = totalDonationsKes - totalDisbursementsKes;
+    // 3. Calculate Main Cash Balance (Funds not yet allocated to groups) - ALWAYS CURRENT BALANCE
+    // This requires fetching ALL donations and ALL disbursements up to today.
+    const { data: allDonations } = await supabase.from('donations').select('kes_amount');
+    const { data: allDisbursements } = await supabase.from('disbursements').select('amount_kes');
+    
+    const totalAllDonations = allDonations?.reduce((sum, d) => sum + parseFloat(d.kes_amount.toString()), 0) || 0;
+    const totalAllDisbursements = allDisbursements?.reduce((sum, d) => sum + parseFloat(d.amount_kes.toString()), 0) || 0;
+    
+    const mainCashBalance = totalAllDonations - totalAllDisbursements;
 
-    // 4. Calculate Total Group Balance (Sum of all group balances)
+
+    // 4. Calculate Total Group Balance (Sum of all group balances) - ALWAYS CURRENT BALANCE
     const groups = await fetchGroups(); 
     const totalGroupBalance = groups.reduce((sum, g) => sum + g.currentBalanceKes, 0);
 
@@ -62,26 +92,25 @@ export async function fetchFinancialSummary(): Promise<FinancialSummary> {
     const totalSystemBalance = mainCashBalance + totalGroupBalance;
 
     return {
-        totalDonationsKes,
-        totalDisbursementsKes,
-        mainCashBalance,
-        totalGroupBalance,
-        totalSystemBalance,
+        totalDonationsKes, // Filtered by date range
+        totalDisbursementsKes, // Filtered by date range
+        mainCashBalance, // Current balance (unfiltered)
+        totalGroupBalance, // Current balance (unfiltered)
+        totalSystemBalance, // Current balance (unfiltered)
     };
 }
 
 /**
  * Fetches aggregated data required for the Income Statement (Revenue vs. Expenses).
  */
-export async function fetchIncomeStatementData(): Promise<IncomeStatementData> {
-    const summary = await fetchFinancialSummary();
+export async function fetchIncomeStatementData(startDate?: Date, endDate?: Date): Promise<IncomeStatementData> {
+    // We use the filtered totals from the summary for the Income Statement
+    const summary = await fetchFinancialSummary(startDate, endDate);
     
     const totalDonationsKes = summary.totalDonationsKes;
     const totalDisbursementsKes = summary.totalDisbursementsKes;
     
     // Net Surplus is calculated as Revenue (Donations) minus Expenses (Disbursements)
-    // Note: In this simplified model, disbursements are treated as expenses for the purpose of Net Income calculation, 
-    // although technically they are internal fund transfers. We use this structure until true operational expenses are tracked.
     const netSurplus = totalDonationsKes - totalDisbursementsKes;
 
     return {
@@ -93,9 +122,10 @@ export async function fetchIncomeStatementData(): Promise<IncomeStatementData> {
 
 /**
  * Fetches aggregated data required for the Balance Sheet (Assets, Liabilities, Equity).
+ * Balance Sheet is always calculated as of today, so date filters are ignored here.
  */
 export async function fetchBalanceSheetData(): Promise<BalanceSheetData> {
-    const summary = await fetchFinancialSummary();
+    const summary = await fetchFinancialSummary(); // Fetches current balances
 
     const totalAssets = summary.mainCashBalance + summary.totalGroupBalance;
     

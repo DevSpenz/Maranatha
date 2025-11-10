@@ -7,15 +7,25 @@ import { useState, useEffect, useCallback } from "react";
 import { fetchIncomeStatementData, IncomeStatementData } from "@/lib/data/cashbook";
 import { toast } from "sonner";
 import { IncomeStatementReport } from "@/components/reports/IncomeStatementReport";
+import { DateRangePicker } from "@/components/forms/DateRangePicker";
+import { DateRange } from "react-day-picker";
+import { endOfDay, startOfYear } from "date-fns";
 
 export default function IncomeStatementPage() {
   const [data, setData] = useState<IncomeStatementData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfYear(new Date()),
+    to: endOfDay(new Date()),
+  });
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (range: DateRange | undefined) => {
     setIsLoading(true);
     try {
-      const fetchedData = await fetchIncomeStatementData();
+      const startDate = range?.from;
+      const endDate = range?.to;
+      
+      const fetchedData = await fetchIncomeStatementData(startDate, endDate);
       setData(fetchedData);
     } catch (error) {
       toast.error("Failed to load Income Statement data.");
@@ -26,8 +36,8 @@ export default function IncomeStatementPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData(dateRange);
+  }, [dateRange, loadData]);
 
   return (
     <div className="space-y-6">
@@ -36,6 +46,20 @@ export default function IncomeStatementPage() {
           <h1 className="text-3xl font-bold tracking-tight">Income Statement</h1>
       </div>
       
+      <Card>
+          <CardHeader>
+              <CardTitle>Report Options</CardTitle>
+          </CardHeader>
+          <CardContent>
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <DateRangePicker date={dateRange} setDate={setDateRange} />
+                  <p className="text-sm text-muted-foreground">
+                      Showing performance from {dateRange?.from ? dateRange.from.toLocaleDateString() : 'start'} to {dateRange?.to ? dateRange.to.toLocaleDateString() : 'today'}.
+                  </p>
+              </div>
+          </CardContent>
+      </Card>
+
       {isLoading ? (
           <Card className="h-[500px] flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -45,23 +69,12 @@ export default function IncomeStatementPage() {
       ) : (
           <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
-                  No financial data available to generate the Income Statement.
+                  No financial data available for the selected period.
               </CardContent>
           </Card>
       )}
       
       <Separator />
-      
-      <Card>
-          <CardHeader>
-              <CardTitle>Report Options</CardTitle>
-          </CardHeader>
-          <CardContent>
-              <div className="text-muted-foreground">
-                  Date range selection and export options placeholder.
-              </div>
-          </CardContent>
-      </Card>
     </div>
   );
 }
