@@ -5,12 +5,13 @@ import { DollarSign, Users, Wallet, BookOpen, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useCallback } from "react";
-import { fetchFinancialSummary } from "@/lib/data/cashbook";
+import { fetchFinancialSummary, fetchCashbookEntries } from "@/lib/data/cashbook";
 import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
 import { fetchGroups } from "@/lib/data/groups";
-import { Group } from "@/types";
+import { Group, CashbookEntry } from "@/types";
 import { useSession } from "@/components/auth/SessionContextProvider";
+import { RecentActivityTable } from "@/components/dashboard/RecentActivityTable";
 
 // Initial state for metrics
 const initialMetrics = [
@@ -44,6 +45,7 @@ export default function Home() {
   const { user } = useSession();
   const [metrics, setMetrics] = useState(initialMetrics);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [recentActivity, setRecentActivity] = useState<CashbookEntry[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
@@ -51,8 +53,11 @@ export default function Home() {
 
     setIsLoadingData(true);
     try {
-      const summary = await fetchFinancialSummary();
-      const fetchedGroups = await fetchGroups();
+      const [summary, fetchedGroups, cashbookEntries] = await Promise.all([
+        fetchFinancialSummary(),
+        fetchGroups(),
+        fetchCashbookEntries(),
+      ]);
       
       // Calculate total beneficiaries by summing up counts from all groups
       const totalBeneficiaries = fetchedGroups.reduce((sum, g) => sum + g.beneficiaryCount, 0);
@@ -85,6 +90,8 @@ export default function Home() {
       ]);
       
       setGroups(fetchedGroups);
+      // Take the top 5 recent entries (already sorted descending by date in fetchCashbookEntries)
+      setRecentActivity(cashbookEntries.slice(0, 5)); 
 
     } catch (error) {
       toast.error("Failed to load dashboard data.");
@@ -130,16 +137,13 @@ export default function Home() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent Disbursements</CardTitle>
+            <CardTitle>Recent Activities</CardTitle>
             <CardDescription>
-              Latest fund allocations to groups and beneficiaries.
+              The 5 most recent donations and disbursements recorded.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[350px] flex items-center justify-center text-muted-foreground">
-              {/* Placeholder for a table or list of recent transactions */}
-              Recent transaction list placeholder
-            </div>
+            <RecentActivityTable data={recentActivity} />
           </CardContent>
         </Card>
         
