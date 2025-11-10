@@ -5,13 +5,13 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { DollarSign, Users, Wallet, BookOpen, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useState, useEffect, useCallback } from "react";
 import { fetchFinancialSummary } from "@/lib/data/cashbook";
 import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
 import { fetchGroups } from "@/lib/data/groups";
 import { Group } from "@/types";
+import { useSession } from "@/components/auth/SessionContextProvider";
 
 // Initial state for metrics
 const initialMetrics = [
@@ -42,12 +42,14 @@ const initialMetrics = [
 ];
 
 export default function Home() {
-  const { isLoading: isAuthLoading, user } = useAuthGuard();
+  const { user } = useSession();
   const [metrics, setMetrics] = useState(initialMetrics);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const loadDashboardData = useCallback(async () => {
+    if (!user) return; // Should not happen often due to AuthWrapper, but good practice
+
     setIsLoadingData(true);
     try {
       const summary = await fetchFinancialSummary();
@@ -91,7 +93,7 @@ export default function Home() {
     } finally {
       setIsLoadingData(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -99,12 +101,14 @@ export default function Home() {
     }
   }, [user, loadDashboardData]);
 
-  if (isAuthLoading || !user || isLoadingData) {
-    // Show a loading state while checking auth or if redirecting
+  if (isLoadingData) {
+    // Show a loading state while fetching data
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardShell>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardShell>
     );
   }
 

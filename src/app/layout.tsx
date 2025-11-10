@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionContextProvider } from "@/components/auth/SessionContextProvider";
+import { AuthWrapper } from "@/components/layout/AuthWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +38,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionContextProvider>
-            {children}
+            <AuthWrapper>
+              {children}
+            </AuthWrapper>
           </SessionContextProvider>
           <Toaster />
         </ThemeProvider>

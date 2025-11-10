@@ -4,13 +4,14 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuthGuard } from '@/hooks/use-auth-guard';
+import { useSession } from '@/components/auth/SessionContextProvider';
 
 export default function LoginPage() {
-  const { user, isLoading } = useAuthGuard();
+  const { user, isLoading } = useSession();
 
-  if (isLoading || user) {
-    // Show nothing or a spinner while loading or redirecting
+  // The global AuthWrapper handles redirection if user is logged in.
+  // We only need to check if the session is loading here to prevent flicker before AuthWrapper takes over.
+  if (isLoading) {
     return null;
   }
 
