@@ -16,6 +16,13 @@ export interface IncomeStatementData {
     netSurplus: number;
 }
 
+export interface BalanceSheetData {
+    mainCashBalance: number;
+    totalGroupBalance: number;
+    totalAssets: number;
+    accumulatedFundBalance: number; // Should equal totalAssets in this simplified model
+}
+
 /**
  * Fetches and calculates the overall financial summary metrics.
  */
@@ -81,6 +88,26 @@ export async function fetchIncomeStatementData(): Promise<IncomeStatementData> {
         totalDonationsKes,
         totalDisbursementsKes,
         netSurplus,
+    };
+}
+
+/**
+ * Fetches aggregated data required for the Balance Sheet (Assets, Liabilities, Equity).
+ */
+export async function fetchBalanceSheetData(): Promise<BalanceSheetData> {
+    const summary = await fetchFinancialSummary();
+
+    const totalAssets = summary.mainCashBalance + summary.totalGroupBalance;
+    
+    // In this simplified model (no liabilities, no opening balance), 
+    // Accumulated Fund Balance (Equity) equals Total Assets (Total System Cash).
+    const accumulatedFundBalance = totalAssets;
+
+    return {
+        mainCashBalance: summary.mainCashBalance,
+        totalGroupBalance: summary.totalGroupBalance,
+        totalAssets,
+        accumulatedFundBalance,
     };
 }
 

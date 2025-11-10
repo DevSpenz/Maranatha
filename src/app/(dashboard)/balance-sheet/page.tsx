@@ -1,8 +1,34 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Scale } from "lucide-react";
+import { Scale, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { fetchBalanceSheetData, BalanceSheetData } from "@/lib/data/cashbook";
+import { toast } from "sonner";
+import { BalanceSheetReport } from "@/components/reports/BalanceSheetReport";
 
 export default function BalanceSheetPage() {
+  const [data, setData] = useState<BalanceSheetData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedData = await fetchBalanceSheetData();
+      setData(fetchedData);
+    } catch (error) {
+      toast.error("Failed to load Balance Sheet data.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -10,19 +36,19 @@ export default function BalanceSheetPage() {
           <h1 className="text-3xl font-bold tracking-tight">Balance Sheet</h1>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Statement of Financial Position</CardTitle>
-          <CardDescription>
-            Summary of the organization's assets, liabilities, and equity at a specific point in time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[500px] flex items-center justify-center text-muted-foreground">
-            Balance Sheet Report Placeholder
-          </div>
-        </CardContent>
-      </Card>
+      {isLoading ? (
+          <Card className="h-[500px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </Card>
+      ) : data ? (
+          <BalanceSheetReport data={data} />
+      ) : (
+          <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                  No financial data available to generate the Balance Sheet.
+              </CardContent>
+          </Card>
+      )}
       
       <Separator />
       
