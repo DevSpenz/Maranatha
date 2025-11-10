@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Beneficiary, Group } from "@/types";
+import { Beneficiary, Group, BeneficiaryPayment } from "@/types";
 import { fetchGroups } from "./groups";
-import { fetchBeneficiaries } from "./beneficiaries";
 
 interface PaymentRunResult {
     totalPaid: number;
@@ -104,4 +103,42 @@ export async function createEqualSplitPaymentRun(paymentData: {
     }
     
     return { totalPaid, paymentsCount } as PaymentRunResult;
+}
+
+/**
+ * Fetches all payments made to a specific beneficiary.
+ */
+export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<BeneficiaryPayment[]> {
+    const { data, error } = await supabase
+        .from('beneficiary_payments')
+        .select(`
+            id, 
+            group_id, 
+            beneficiary_id, 
+            amount_kes, 
+            payment_run_id, 
+            notes, 
+            date_paid, 
+            created_at,
+            groups (name)
+        `)
+        .eq('beneficiary_id', beneficiaryId)
+        .order('date_paid', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching beneficiary payments:", error);
+        throw new Error("Failed to load beneficiary payment history.");
+    }
+
+    return data.map(p => ({
+        id: p.id,
+        groupId: p.group_id,
+        groupName: (p.groups as { name: string }).name,
+        beneficiaryId: p.beneficiary_id,
+        amountKes: parseFloat(p.amount_kes.toString()),
+        paymentRunId: p.payment_run_id || undefined,
+        notes: p.notes || undefined,
+        datePaid: new Date(p.date_paid),
+        recordedAt: new Date(p.created_at),
+    })) as BeneficiaryPayment[];
 }

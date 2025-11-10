@@ -58,3 +58,15 @@ export interface CashbookEntry {
   amountKes: number;
   sourceOrTarget: string; // Donor name or Group name
 }
+
+export interface BeneficiaryPayment {
+  id: string;
+  groupId: string;
+  groupName: string;
+  beneficiaryId: string;
+  amountKes: number;
+  paymentRunId?: string;
+  notes?: string;
+  datePaid: Date;
+  recordedAt: Date;
+}

@@ -2,6 +2,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { Beneficiary } from "@/types";
 
 /**
+ * Helper function to map database row to Beneficiary type.
+ */
+const mapBeneficiary = (b: any): Beneficiary => ({
+    id: b.id,
+    sponsorNumber: b.sponsor_number,
+    fullName: b.full_name,
+    idNumber: b.id_number || undefined,
+    dateOfBirth: new Date(b.date_of_birth),
+    phoneNumber: b.phone_number,
+    gender: b.gender as Beneficiary['gender'],
+    guardianName: b.guardian_name,
+    guardianPhone: b.guardian_phone,
+    guardianId: b.guardian_id || undefined,
+    status: b.status as Beneficiary['status'],
+    groupId: b.group_id,
+});
+
+/**
  * Fetches all beneficiaries from the database.
  * Maps snake_case database fields to camelCase frontend types.
  */
@@ -16,21 +34,29 @@ export async function fetchBeneficiaries(): Promise<Beneficiary[]> {
         throw new Error("Failed to load beneficiary data.");
     }
 
-    return data.map(b => ({
-        id: b.id,
-        sponsorNumber: b.sponsor_number,
-        fullName: b.full_name,
-        idNumber: b.id_number || undefined,
-        dateOfBirth: new Date(b.date_of_birth),
-        phoneNumber: b.phone_number,
-        gender: b.gender as Beneficiary['gender'],
-        guardianName: b.guardian_name,
-        guardianPhone: b.guardian_phone,
-        guardianId: b.guardian_id || undefined,
-        status: b.status as Beneficiary['status'],
-        groupId: b.group_id,
-    })) as Beneficiary[];
+    return data.map(mapBeneficiary) as Beneficiary[];
 }
+
+/**
+ * Fetches a single beneficiary by ID.
+ */
+export async function fetchBeneficiaryById(beneficiaryId: string): Promise<Beneficiary | null> {
+    const { data, error } = await supabase
+        .from('beneficiaries')
+        .select('id, sponsor_number, full_name, id_number, date_of_birth, phone_number, gender, guardian_name, guardian_phone, guardian_id, status, group_id')
+        .eq('id', beneficiaryId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+        console.error("Error fetching single beneficiary:", error);
+        throw new Error("Failed to load beneficiary details.");
+    }
+    
+    if (!data) return null;
+
+    return mapBeneficiary(data);
+}
+
 
 /**
  * Creates a new beneficiary entry in the database.

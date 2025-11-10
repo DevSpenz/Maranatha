@@ -5,7 +5,7 @@ import { Beneficiary } from "@/types";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, ArrowUpDown, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import { ConfirmationDialog } from "@/components/dialogs/ConfirmationDialog";
 import { useState } from "react";
 import { deleteBeneficiary } from "@/lib/data/beneficiaries";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface BeneficiaryActionsProps {
     beneficiary: Beneficiary;
@@ -50,6 +51,13 @@ const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted }: BeneficiaryAc
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    
+                    <DropdownMenuItem asChild>
+                        <Link href={`/beneficiaries/${beneficiary.id}`} className="flex items-center">
+                            <Eye className="mr-2 h-4 w-4" /> View Profile
+                        </Link>
+                    </DropdownMenuItem>
+
                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(beneficiary.id)}>
                         Copy Beneficiary ID
                     </DropdownMenuItem>
