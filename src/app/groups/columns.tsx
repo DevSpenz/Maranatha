@@ -18,6 +18,7 @@ import { useState } from "react";
 import { deleteGroup } from "@/lib/data/groups";
 import { toast } from "sonner";
 import { GroupEditDialog } from "@/components/dialogs/GroupEditDialog"; // Import Edit Dialog
+import Link from "next/link"; // Import Link
 
 interface GroupActionsProps {
     group: Group;
@@ -50,6 +51,11 @@ const GroupActions = ({ group, onGroupDeleted, onGroupUpdated }: GroupActionsPro
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                        <Link href={`/groups/${group.id}`} className="flex items-center cursor-pointer">
+                            View Details
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(group.id)}>
                         Copy Group ID
                     </DropdownMenuItem>
@@ -92,7 +98,9 @@ export const columns = (onGroupDeleted: () => void): ColumnDef<Group>[] => [
     accessorKey: "name",
     header: "Group Name",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
+      <Link href={`/groups/${row.original.id}`} className="font-medium text-primary hover:underline">
+        {row.getValue("name")}
+      </Link>
     ),
   },
   {
