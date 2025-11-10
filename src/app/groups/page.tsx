@@ -6,11 +6,12 @@ import { GroupForm } from "@/components/forms/GroupForm";
 import { DataTable } from "@/components/data-table/DataTable";
 import { columns } from "./columns";
 import { Group } from "@/types";
+import { MetricCard } from "@/components/dashboard/MetricCard"; // Reusing MetricCard for consistency
 
 // Mock Group Summary Data
 const mockGroupSummary = [
   { title: "Total Groups", value: "5", Icon: Users, description: "Currently active groups" },
-  { title: "Total Group Funds (KES)", value: "KSh 0", Icon: DollarSign, description: "Funds available for disbursement" },
+  { title: "Total Group Funds (KES)", value: "KSh 16,500", Icon: DollarSign, description: "Funds available for disbursement" },
   { title: "Average Disbursement Ratio", value: "20%", Icon: Percent, description: "Average ratio across all groups" },
 ];
 
@@ -48,27 +49,15 @@ const mockGroups: Group[] = [
         currentBalanceKes: 0,
         beneficiaryCount: 0,
     },
+    {
+        id: "g5",
+        name: "Emergency Relief",
+        description: "Funds reserved for unforeseen crises.",
+        disbursementRatio: 30,
+        currentBalanceKes: 0,
+        beneficiaryCount: 0,
+    },
 ];
-
-interface GroupSummaryCardProps {
-  title: string;
-  value: string;
-  description: string;
-  Icon: React.ElementType;
-}
-
-const GroupSummaryCard: React.FC<GroupSummaryCardProps> = ({ title, value, description, Icon }) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
-);
 
 
 export default function GroupsPage() {
@@ -77,13 +66,12 @@ export default function GroupsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Group Management</h1>
-          {/* Removed 'Create New Group' button since the form is displayed below */}
         </div>
 
         {/* Group Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           {mockGroupSummary.map((summary) => (
-            <GroupSummaryCard
+            <MetricCard
               key={summary.title}
               title={summary.title}
               value={summary.value}
