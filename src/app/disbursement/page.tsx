@@ -11,6 +11,9 @@ import { columns } from "./columns";
 import { Disbursement } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 import { fetchDisbursements } from "@/lib/data/disbursements";
+import { fetchFinancialSummary } from "@/lib/data/cashbook";
+import { fetchGroups } from "@/lib/data/groups";
+import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Initial state for summary cards while loading
@@ -18,13 +21,6 @@ const initialDisbursementSummary = [
   { title: "Main Cash Balance (KES)", value: "...", Icon: DollarSign, description: "Available for allocation" },
   { title: "Total Disbursed YTD", value: "...", Icon: TrendingDown, description: "Funds moved to groups" },
   { title: "Groups with Zero Balance", value: "...", Icon: Users, description: "Requires immediate allocation" },
-];
-
-// NOTE: Summary metrics will remain mocked for now until we implement the Cashbook logic.
-const mockDisbursementSummary = [
-  { title: "Main Cash Balance (KES)", value: "KSh 20,000", Icon: DollarSign, description: "Available for allocation" },
-  { title: "Total Disbursed YTD", value: "KSh 950,000", Icon: TrendingDown, description: "Funds moved to groups" },
-  { title: "Groups with Zero Balance", value: "2", Icon: Users, description: "Requires immediate allocation" },
 ];
 
 
@@ -36,14 +32,40 @@ export default function DisbursementPage() {
   const loadDisbursements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedDisbursements = await fetchDisbursements();
+      const [fetchedDisbursements, financialSummary, groups] = await Promise.all([
+        fetchDisbursements(),
+        fetchFinancialSummary(),
+        fetchGroups(),
+      ]);
+      
       setDisbursements(fetchedDisbursements);
       
-      // For now, use mock summary data until cashbook logic is implemented
-      setSummary(mockDisbursementSummary); 
+      // Calculate summary metrics
+      const zeroBalanceGroups = groups.filter(g => g.currentBalanceKes <= 0).length;
+
+      setSummary([
+        { 
+            title: "Main Cash Balance (KES)", 
+            value: formatKes(financialSummary.mainCashBalance), 
+            Icon: DollarSign, 
+            description: "Available for allocation" 
+        },
+        { 
+            title: "Total Disbursed YTD", 
+            value: formatKes(financialSummary.totalDisbursementsKes), 
+            Icon: TrendingDown, 
+            description: "Funds moved to groups" 
+        },
+        { 
+            title: "Groups with Zero Balance", 
+            value: zeroBalanceGroups.toString(), 
+            Icon: Users, 
+            description: "Requires immediate allocation" 
+        },
+      ]);
 
     } catch (error) {
-      toast.error("Failed to load disbursement history.");
+      toast.error("Failed to load disbursement history or summary.");
       console.error(error);
     } finally {
       setIsLoading(false);
