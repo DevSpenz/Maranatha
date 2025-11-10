@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Scale,
   Menu,
+  Settings, // Import Settings icon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,12 @@ const navItems = [
       { href: "/income-statement", label: "Income Statement", icon: TrendingUp },
       { href: "/trial-balance", label: "Trial Balance", icon: TrendingUp },
       { href: "/balance-sheet", label: "Balance Sheet", icon: Scale },
+    ],
+  },
+  {
+    title: "Administration",
+    links: [
+      { href: "/settings", label: "Settings", icon: Settings }, // New Settings link
     ],
   },
 ];
