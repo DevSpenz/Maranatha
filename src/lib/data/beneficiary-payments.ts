@@ -144,6 +144,47 @@ export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<B
 }
 
 /**
+ * Fetches all payments made from a specific group.
+ */
+export async function fetchBeneficiaryPaymentsByGroupId(groupId: string): Promise<BeneficiaryPayment[]> {
+    const { data, error } = await supabase
+        .from('beneficiary_payments')
+        .select(`
+            id, 
+            group_id, 
+            beneficiary_id, 
+            amount_kes, 
+            payment_run_id, 
+            notes, 
+            date_paid, 
+            created_at,
+            groups (name),
+            beneficiaries (full_name)
+        `)
+        .eq('group_id', groupId)
+        .order('date_paid', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching group payments:", error);
+        throw new Error("Failed to load group payment history.");
+    }
+
+    return data.map(p => ({
+        id: p.id,
+        groupId: p.group_id,
+        groupName: (p.groups as { name: string }).name,
+        beneficiaryId: p.beneficiary_id,
+        beneficiaryName: (p.beneficiaries as { full_name: string }).full_name, // Include beneficiary name
+        amountKes: parseFloat(p.amount_kes.toString()),
+        paymentRunId: p.payment_run_id || undefined,
+        notes: p.notes || undefined,
+        datePaid: new Date(p.date_paid),
+        recordedAt: new Date(p.created_at),
+    })) as BeneficiaryPayment[];
+}
+
+
+/**
  * Fetches the total amount paid out from all groups, aggregated by group ID.
  * Returns a map: { [groupId: string]: totalPaidKes }
  */

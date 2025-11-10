@@ -98,6 +98,7 @@ const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted, onBeneficiaryUp
 
 
 // Define a function that returns the columns, accepting the group map and delete callback
+// NOTE: The groupMap parameter is now unused but kept for compatibility with the DataTable structure if needed elsewhere.
 export const columns = (groupMap: Record<string, string>, onBeneficiaryUpdated: () => void): ColumnDef<Beneficiary>[] => [
   {
     accessorKey: "fullName",
@@ -129,11 +130,10 @@ export const columns = (groupMap: Record<string, string>, onBeneficiaryUpdated: 
     },
   },
   {
-    accessorKey: "groupId",
+    accessorKey: "groupName", // Use groupName directly
     header: "Assigned Group",
     cell: ({ row }) => {
-        const groupId = row.getValue("groupId") as string;
-        return <div className="text-sm text-muted-foreground">{groupMap[groupId] || "N/A"}</div>;
+        return <div className="text-sm text-muted-foreground">{row.original.groupName || "N/A"}</div>;
     }
   },
   {

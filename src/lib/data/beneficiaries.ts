@@ -3,6 +3,7 @@ import { Beneficiary } from "@/types";
 
 /**
  * Helper function to map database row to Beneficiary type.
+ * Expects joined 'groups' data.
  */
 const mapBeneficiary = (b: any): Beneficiary => ({
     id: b.id,
@@ -17,7 +18,24 @@ const mapBeneficiary = (b: any): Beneficiary => ({
     guardianId: b.guardian_id || undefined,
     status: b.status as Beneficiary['status'],
     groupId: b.group_id,
+    groupName: b.groups?.name || 'N/A', // Extract group name from joined data
 });
+
+const BENEFICIARY_SELECT_FIELDS = `
+    id, 
+    sponsor_number, 
+    full_name, 
+    id_number, 
+    date_of_birth, 
+    phone_number, 
+    gender, 
+    guardian_name, 
+    guardian_phone, 
+    guardian_id, 
+    status, 
+    group_id,
+    groups (name)
+`;
 
 /**
  * Fetches all beneficiaries from the database.
@@ -26,7 +44,7 @@ const mapBeneficiary = (b: any): Beneficiary => ({
 export async function fetchBeneficiaries(): Promise<Beneficiary[]> {
     const { data, error } = await supabase
         .from('beneficiaries')
-        .select('id, sponsor_number, full_name, id_number, date_of_birth, phone_number, gender, guardian_name, guardian_phone, guardian_id, status, group_id')
+        .select(BENEFICIARY_SELECT_FIELDS)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -43,7 +61,7 @@ export async function fetchBeneficiaries(): Promise<Beneficiary[]> {
 export async function fetchBeneficiaryById(beneficiaryId: string): Promise<Beneficiary | null> {
     const { data, error } = await supabase
         .from('beneficiaries')
-        .select('id, sponsor_number, full_name, id_number, date_of_birth, phone_number, gender, guardian_name, guardian_phone, guardian_id, status, group_id')
+        .select(BENEFICIARY_SELECT_FIELDS)
         .eq('id', beneficiaryId)
         .single();
 
@@ -61,7 +79,7 @@ export async function fetchBeneficiaryById(beneficiaryId: string): Promise<Benef
 /**
  * Creates a new beneficiary entry in the database.
  */
-export async function createBeneficiary(beneficiaryData: Omit<Beneficiary, 'id' | 'dateOfBirth'> & { dateOfBirth: Date, user_id: string }) {
+export async function createBeneficiary(beneficiaryData: Omit<Beneficiary, 'id' | 'dateOfBirth' | 'groupName'> & { dateOfBirth: Date, user_id: string }) {
     const { error } = await supabase
         .from('beneficiaries')
         .insert({
@@ -90,7 +108,7 @@ export async function createBeneficiary(beneficiaryData: Omit<Beneficiary, 'id' 
 /**
  * Updates an existing beneficiary entry in the database.
  */
-export async function updateBeneficiary(beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id' | 'dateOfBirth'> & { dateOfBirth: Date }) {
+export async function updateBeneficiary(beneficiaryId: string, beneficiaryData: Omit<Beneficiary, 'id' | 'dateOfBirth' | 'groupName'> & { dateOfBirth: Date }) {
     // Note: user_id is not updated here as it's typically immutable after creation
     const { error } = await supabase
         .from('beneficiaries')
@@ -130,4 +148,22 @@ export async function deleteBeneficiary(beneficiaryId: string) {
         console.error("Error deleting beneficiary:", error);
         throw new Error("Failed to delete beneficiary.");
     }
+}
+
+/**
+ * Fetches all beneficiaries belonging to a specific group ID.
+ */
+export async function fetchBeneficiariesByGroupId(groupId: string): Promise<Beneficiary[]> {
+    const { data, error } = await supabase
+        .from('beneficiaries')
+        .select(BENEFICIARY_SELECT_FIELDS)
+        .eq('group_id', groupId)
+        .order('full_name', { ascending: true });
+
+    if (error) {
+        console.error(`Error fetching beneficiaries for group ${groupId}:`, error);
+        throw new Error("Failed to load group beneficiaries.");
+    }
+
+    return data.map(mapBeneficiary) as Beneficiary[];
 }

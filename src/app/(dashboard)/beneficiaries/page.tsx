@@ -8,25 +8,20 @@ import { columns } from "@/app/beneficiaries/columns";
 import { Beneficiary, Group } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 import { fetchBeneficiaries } from "@/lib/data/beneficiaries";
-import { fetchGroups } from "@/lib/data/groups";
 import { toast } from "sonner";
 import { BeneficiaryFormDialog } from "@/components/dialogs/BeneficiaryFormDialog";
 import { BeneficiaryPaymentDialog } from "@/components/dialogs/BeneficiaryPaymentDialog"; // Import new dialog
 
 export default function BeneficiariesPage() {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [fetchedBeneficiaries, fetchedGroups] = await Promise.all([
-        fetchBeneficiaries(),
-        fetchGroups(),
-      ]);
+      // Only fetch beneficiaries, as group name is now joined in the data layer
+      const fetchedBeneficiaries = await fetchBeneficiaries();
       setBeneficiaries(fetchedBeneficiaries);
-      setGroups(fetchedGroups);
     } catch (error) {
       toast.error("Failed to load beneficiary data.");
       console.error(error);
@@ -39,11 +34,9 @@ export default function BeneficiariesPage() {
     loadData();
   }, [loadData]);
 
-  // Create a map for quick group name lookup in the columns file
-  const groupMap: Record<string, string> = groups.reduce((acc, group) => {
-    acc[group.id] = group.name;
-    return acc;
-  }, {} as Record<string, string>);
+  // Pass an empty map since the columns now use groupName directly, 
+  // but the function signature requires it for compatibility with the DataTable pattern.
+  const groupMap: Record<string, string> = {}; 
 
   return (
     <div className="space-y-6">

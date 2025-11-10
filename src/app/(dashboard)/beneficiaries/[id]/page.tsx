@@ -117,7 +117,7 @@ export default function BeneficiaryDetailPage({ params }: BeneficiaryDetailPageP
                         <DetailRow label="Date of Birth" value={format(beneficiary.dateOfBirth, "PPP")} Icon={Calendar} />
                         <DetailRow label="Phone Number" value={beneficiary.phoneNumber} Icon={Phone} />
                         <DetailRow label="Gender" value={beneficiary.gender.charAt(0).toUpperCase() + beneficiary.gender.slice(1)} />
-                        <DetailRow label="Assigned Group" value={beneficiary.groupId} Icon={Home} />
+                        <DetailRow label="Assigned Group" value={beneficiary.groupName} Icon={Home} />
                         <div className="flex justify-between items-center pt-2">
                             <span className="font-medium">Status:</span>
                             <Badge className={cn("capitalize", statusClasses[beneficiary.status])}>

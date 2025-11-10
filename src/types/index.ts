@@ -38,6 +38,7 @@ export interface Beneficiary {
   guardianId?: string;
   status: 'active' | 'inactive' | 'graduated';
   groupId: string; // Foreign key to Group
+  groupName: string; // Added: Name of the assigned group
 }
 
 export interface Disbursement {
@@ -64,6 +65,7 @@ export interface BeneficiaryPayment {
   groupId: string;
   groupName: string;
   beneficiaryId: string;
+  beneficiaryName?: string; // Added: Name of the beneficiary who received the payment
   amountKes: number;
   paymentRunId?: string;
   notes?: string;
