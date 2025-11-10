@@ -67,7 +67,11 @@ export default function BeneficiariesPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
           ) : (
-              <DataTable columns={columns(groupMap)} data={beneficiaries} />
+              <DataTable 
+                columns={columns(groupMap)} 
+                data={beneficiaries} 
+                searchKey="fullName" // Enable filtering by full name
+              />
           )}
         </CardContent>
       </Card>
