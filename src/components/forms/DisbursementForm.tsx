@@ -17,14 +17,12 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Mock data for Select fields
-const mockGroups = [
-    { id: "g1", name: "Primary Education Support", currentBalanceKes: 10000 },
-    { id: "g2", name: "Vocational Training", currentBalanceKes: 5000 },
-];
+import { useSession } from "@/components/auth/SessionContextProvider";
+import { fetchGroups } from "@/lib/data/groups";
+import { Group } from "@/types";
+import { createDisbursement } from "@/lib/data/disbursements";
 
 // --- Zod Schema Definition ---
 const DisbursementSchema = z.object({
@@ -37,16 +35,15 @@ const DisbursementSchema = z.object({
 
 type DisbursementFormValues = z.infer<typeof DisbursementSchema>;
 
-// Mock submission function
-const mockSubmitDisbursement = async (data: DisbursementFormValues) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    console.log("Disbursement Recorded:", data);
-    return { success: true, amount: data.amountKes };
-};
+interface DisbursementFormProps {
+    onDisbursementCreated: () => void;
+}
 
-
-export function DisbursementForm() {
+export function DisbursementForm({ onDisbursementCreated }: DisbursementFormProps) {
+  const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isGroupsLoading, setIsGroupsLoading] = useState(true);
 
   const form = useForm<DisbursementFormValues>({
     resolver: zodResolver(DisbursementSchema),
@@ -57,18 +54,49 @@ export function DisbursementForm() {
     },
   });
 
+  useEffect(() => {
+    const loadGroups = async () => {
+        try {
+            const fetchedGroups = await fetchGroups();
+            setGroups(fetchedGroups);
+        } catch (error) {
+            toast.error("Failed to load groups for disbursement.");
+        } finally {
+            setIsGroupsLoading(false);
+        }
+    };
+    loadGroups();
+  }, []);
+
   async function onSubmit(data: DisbursementFormValues) {
+    if (!user) {
+        toast.error("Authentication required to record a disbursement.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
-        await mockSubmitDisbursement(data);
-        toast.success(`KSh ${data.amountKes.toLocaleString()} disbursed successfully!`);
+        // Find the group name for the recorded_by field (using user's email for now)
+        const recordedBy = user.email || 'Unknown User';
+
+        await createDisbursement({
+            groupId: data.groupId,
+            amountKes: data.amountKes,
+            notes: data.notes,
+            user_id: user.id,
+            recordedBy: recordedBy,
+        });
+        
+        toast.success(`KSh ${data.amountKes.toLocaleString()} disbursed successfully! Group balance updated.`);
         form.reset({
             groupId: undefined,
             amountKes: 0,
             notes: "",
         });
+        onDisbursementCreated();
     } catch (error) {
-        toast.error("Failed to record disbursement.");
+        console.error(error);
+        toast.error("Failed to record disbursement or update group balance.");
     } finally {
         setIsSubmitting(false);
     }
@@ -93,14 +121,14 @@ export function DisbursementForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Target Group</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isGroupsLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Group to receive funds" />
+                        <SelectValue placeholder={isGroupsLoading ? "Loading groups..." : "Select Group to receive funds"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockGroups.map(group => (
+                      {groups.map(group => (
                           <SelectItem key={group.id} value={group.id}>
                             {group.name} (Balance: KSh {group.currentBalanceKes.toLocaleString()})
                           </SelectItem>
@@ -150,7 +178,7 @@ export function DisbursementForm() {
 
             {/* Submit Button */}
             <div className="md:col-span-2 flex items-end justify-end pt-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isGroupsLoading}>
                 {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
