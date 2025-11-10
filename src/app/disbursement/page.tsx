@@ -3,7 +3,6 @@
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { DisbursementForm } from "@/components/forms/DisbursementForm";
 import { DollarSign, TrendingDown, Users, Loader2 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { DataTable } from "@/components/data-table/DataTable";
@@ -15,6 +14,7 @@ import { fetchFinancialSummary } from "@/lib/data/cashbook";
 import { fetchGroups } from "@/lib/data/groups";
 import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
+import { DisbursementFormDialog } from "@/components/dialogs/DisbursementFormDialog";
 
 // Initial state for summary cards while loading
 const initialDisbursementSummary = [
@@ -79,7 +79,10 @@ export default function DisbursementPage() {
   return (
     <DashboardShell>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Fund Disbursement</h1>
+        <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Fund Disbursement</h1>
+            <DisbursementFormDialog onSuccess={loadDisbursements} />
+        </div>
         
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -96,11 +99,6 @@ export default function DisbursementPage() {
 
         <Separator />
         
-        {/* New Disbursement Form */}
-        <DisbursementForm onDisbursementCreated={loadDisbursements} />
-
-        <Separator />
-
         {/* Disbursement History Table */}
         <Card>
           <CardHeader>
