@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Users, DollarSign, Percent } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { GroupForm } from "@/components/forms/GroupForm";
 
 // Mock Group Summary Data
 const mockGroupSummary = [
@@ -38,9 +39,7 @@ export default function GroupsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Group Management</h1>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Create New Group
-          </Button>
+          {/* Removed 'Create New Group' button since the form is displayed below */}
         </div>
 
         {/* Group Summary Cards */}
@@ -55,6 +54,11 @@ export default function GroupsPage() {
             />
           ))}
         </div>
+
+        <Separator />
+        
+        {/* New Group Creation Form */}
+        <GroupForm />
 
         <Separator />
 
