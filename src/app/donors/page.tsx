@@ -2,16 +2,15 @@
 
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle, Loader2 } from "lucide-react";
-import { DonationForm } from "@/components/forms/DonationForm";
+import { Loader2 } from "lucide-react";
 import { DataTable } from "@/components/data-table/DataTable";
 import { columns } from "./columns";
 import { Donation } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 import { fetchDonations } from "@/lib/data/donations";
 import { toast } from "sonner";
+import { DonationFormDialog } from "@/components/dialogs/DonationFormDialog";
 
 export default function DonorsPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -39,13 +38,8 @@ export default function DonorsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Donor Management</h1>
-          <Button onClick={() => { /* Placeholder for future dialog/scroll */ }}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Record New Donation
-          </Button>
+          <DonationFormDialog onSuccess={loadDonations} />
         </div>
-
-        {/* New Donation Form Card */}
-        <DonationForm onDonationCreated={loadDonations} />
 
         <Separator />
 
