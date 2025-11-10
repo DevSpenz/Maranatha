@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { DollarSign, TrendingDown, Users, Loader2 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { DataTable } from "@/components/data-table/DataTable";
-import { columns } from "./columns";
+import { columns } from "@/app/disbursement/columns";
 import { Disbursement } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 import { fetchDisbursements } from "@/lib/data/disbursements";

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import { DataTable } from "@/components/data-table/DataTable";
-import { columns } from "./columns";
+import { columns } from "@/app/donors/columns";
 import { Donation } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 import { fetchDonations } from "@/lib/data/donations";

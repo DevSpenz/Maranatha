@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, DollarSign, Percent, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/data-table/DataTable";
-import { columns } from "./columns";
+import { columns } from "@/app/groups/columns";
 import { Group } from "@/types";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { useState, useEffect, useCallback } from "react";

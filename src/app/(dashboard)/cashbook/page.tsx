@@ -10,7 +10,7 @@ import { fetchFinancialSummary, fetchCashbookEntries } from "@/lib/data/cashbook
 import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/DataTable";
-import { cashbookColumns } from "./cashbook-columns";
+import { cashbookColumns } from "@/app/cashbook/cashbook-columns";
 import { CashbookEntry } from "@/types";
 
 // Initial state for summary cards while loading

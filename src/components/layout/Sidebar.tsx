@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  User,
   Wallet,
   BookOpen,
   TrendingUp,
@@ -25,7 +24,7 @@ const navItems = [
     links: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
       { href: "/donors", label: "Donors", icon: Users },
-      { href: "/groups", label: "Group Management", icon: User },
+      { href: "/groups", label: "Group Management", icon: Users }, // Changed icon to Users
       { href: "/beneficiaries", label: "Beneficiaries", icon: Users },
       { href: "/disbursement", label: "Disbursement", icon: Wallet },
       { href: "/cashbook", label: "Cashbook & Ledger", icon: BookOpen },
