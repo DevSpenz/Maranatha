@@ -16,14 +16,12 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Mock data for Select fields
-const mockGroups = [
-    { id: "g1", name: "Primary Education Support" },
-    { id: "g2", name: "Vocational Training" },
-];
+import { useSession } from "@/components/auth/SessionContextProvider";
+import { fetchGroups } from "@/lib/data/groups";
+import { Group } from "@/types";
+import { createBeneficiary } from "@/lib/data/beneficiaries";
 
 // --- Zod Schema Definition ---
 const BeneficiarySchema = z.object({
@@ -48,16 +46,15 @@ const BeneficiarySchema = z.object({
 
 type BeneficiaryFormValues = z.infer<typeof BeneficiarySchema>;
 
-// Mock submission function
-const mockSubmitBeneficiary = async (data: BeneficiaryFormValues) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    console.log("Beneficiary Registered:", data);
-    return { success: true, name: data.fullName };
-};
+interface BeneficiaryFormProps {
+    onBeneficiaryCreated: () => void;
+}
 
-
-export function BeneficiaryForm() {
+export function BeneficiaryForm({ onBeneficiaryCreated }: BeneficiaryFormProps) {
+  const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isGroupsLoading, setIsGroupsLoading] = useState(true);
 
   const form = useForm<BeneficiaryFormValues>({
     resolver: zodResolver(BeneficiarySchema),
@@ -76,10 +73,34 @@ export function BeneficiaryForm() {
     },
   });
 
+  useEffect(() => {
+    const loadGroups = async () => {
+        try {
+            const fetchedGroups = await fetchGroups();
+            setGroups(fetchedGroups);
+        } catch (error) {
+            toast.error("Failed to load groups for assignment.");
+        } finally {
+            setIsGroupsLoading(false);
+        }
+    };
+    loadGroups();
+  }, []);
+
   async function onSubmit(data: BeneficiaryFormValues) {
+    if (!user) {
+        toast.error("Authentication required to register a beneficiary.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
-        await mockSubmitBeneficiary(data);
+        await createBeneficiary({
+            ...data,
+            dateOfBirth: new Date(data.dateOfBirth),
+            user_id: user.id,
+        });
+        
         toast.success(`Beneficiary '${data.fullName}' registered successfully!`);
         form.reset({
             fullName: "",
@@ -94,8 +115,10 @@ export function BeneficiaryForm() {
             status: "active",
             groupId: undefined,
         });
+        onBeneficiaryCreated();
     } catch (error) {
-        toast.error("Failed to register beneficiary.");
+        console.error(error);
+        toast.error("Failed to register beneficiary. Check if sponsor number is unique.");
     } finally {
         setIsSubmitting(false);
     }
@@ -286,14 +309,14 @@ export function BeneficiaryForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assigned Group</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isGroupsLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Group" />
+                        <SelectValue placeholder={isGroupsLoading ? "Loading groups..." : "Select Group"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockGroups.map(group => (
+                      {groups.map(group => (
                           <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -305,7 +328,7 @@ export function BeneficiaryForm() {
 
             {/* Submit Button */}
             <div className="md:col-span-2 lg:col-span-3 flex items-end justify-end pt-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isGroupsLoading}>
                 {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (

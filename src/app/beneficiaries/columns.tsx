@@ -16,15 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-// Mock Group mapping for display purposes (based on mock data in groups/page.tsx)
-const mockGroupMap: Record<string, string> = {
-    "g1": "Primary Education Support",
-    "g2": "Vocational Training",
-    "g3": "Medical Aid",
-    "g4": "General Overhead",
-};
-
-export const columns: ColumnDef<Beneficiary>[] = [
+// Define a function that returns the columns, accepting the group map as an argument
+export const columns = (groupMap: Record<string, string>): ColumnDef<Beneficiary>[] => [
   {
     accessorKey: "fullName",
     header: "Full Name",
@@ -39,7 +32,7 @@ export const columns: ColumnDef<Beneficiary>[] = [
     header: "Assigned Group",
     cell: ({ row }) => {
         const groupId = row.getValue("groupId") as string;
-        return <div className="text-sm text-muted-foreground">{mockGroupMap[groupId] || "N/A"}</div>;
+        return <div className="text-sm text-muted-foreground">{groupMap[groupId] || "N/A"}</div>;
     }
   },
   {
