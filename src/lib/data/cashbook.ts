@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchGroups } from "./groups";
+import { CashbookEntry } from "@/types";
 
 interface FinancialSummary {
     totalDonationsKes: number;
@@ -54,4 +55,54 @@ export async function fetchFinancialSummary(): Promise<FinancialSummary> {
         totalGroupBalance,
         totalSystemBalance,
     };
+}
+
+/**
+ * Fetches all donations and disbursements and merges them into a single chronological cashbook.
+ */
+export async function fetchCashbookEntries(): Promise<CashbookEntry[]> {
+    const [donationsResult, disbursementsResult] = await Promise.all([
+        supabase.from('donations').select('id, donor_name, kes_amount, date_received, recorded_at'),
+        supabase.from('disbursements').select(`
+            id, 
+            amount_kes, 
+            date_disbursed, 
+            created_at,
+            groups (name)
+        `),
+    ]);
+
+    if (donationsResult.error) {
+        console.error("Error fetching donations for cashbook:", donationsResult.error);
+        throw new Error("Failed to load cashbook inflows.");
+    }
+    if (disbursementsResult.error) {
+        console.error("Error fetching disbursements for cashbook:", disbursementsResult.error);
+        throw new Error("Failed to load cashbook outflows.");
+    }
+
+    const inflows: CashbookEntry[] = donationsResult.data.map(d => ({
+        id: d.id,
+        date: new Date(d.date_received),
+        description: `Donation received from ${d.donor_name}`,
+        type: 'inflow' as const,
+        amountKes: parseFloat(d.kes_amount.toString()),
+        sourceOrTarget: d.donor_name,
+    }));
+
+    const outflows: CashbookEntry[] = disbursementsResult.data.map(d => ({
+        id: d.id,
+        date: new Date(d.date_disbursed),
+        description: `Funds disbursed to group ${(d.groups as { name: string }).name}`,
+        type: 'outflow' as const,
+        amountKes: parseFloat(d.amount_kes.toString()),
+        sourceOrTarget: (d.groups as { name: string }).name,
+    }));
+
+    // Merge and sort chronologically
+    const cashbook = [...inflows, ...outflows].sort((a, b) => 
+        b.date.getTime() - a.date.getTime() // Sort descending by date
+    );
+
+    return cashbook;
 }

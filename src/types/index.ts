@@ -48,3 +48,12 @@ export interface Disbursement {
   dateDisbursed: Date;
   recordedBy: string;
 }
+
+export interface CashbookEntry {
+  id: string;
+  date: Date;
+  description: string;
+  type: 'inflow' | 'outflow';
+  amountKes: number;
+  sourceOrTarget: string; // Donor name or Group name
+}

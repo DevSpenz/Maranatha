@@ -7,9 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, BookOpen, TrendingUp, Loader2 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { useState, useEffect, useCallback } from "react";
-import { fetchFinancialSummary } from "@/lib/data/cashbook";
+import { fetchFinancialSummary, fetchCashbookEntries } from "@/lib/data/cashbook";
 import { formatKes } from "@/lib/utils";
 import { toast } from "sonner";
+import { DataTable } from "@/components/data-table/DataTable";
+import { cashbookColumns } from "./cashbook-columns";
+import { CashbookEntry } from "@/types";
 
 // Initial state for summary cards while loading
 const initialCashbookSummary = [
@@ -20,12 +23,16 @@ const initialCashbookSummary = [
 
 export default function CashbookPage() {
   const [summary, setSummary] = useState(initialCashbookSummary);
+  const [cashbookEntries, setCashbookEntries] = useState<CashbookEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadSummary = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const financialSummary = await fetchFinancialSummary();
+      const [financialSummary, entries] = await Promise.all([
+        fetchFinancialSummary(),
+        fetchCashbookEntries(),
+      ]);
       
       setSummary([
         { 
@@ -47,9 +54,11 @@ export default function CashbookPage() {
             description: "Funds available for allocation" 
         },
       ]);
+      
+      setCashbookEntries(entries);
 
     } catch (error) {
-      toast.error("Failed to load cashbook summary.");
+      toast.error("Failed to load cashbook data.");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -57,8 +66,8 @@ export default function CashbookPage() {
   }, []);
 
   useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
+    loadData();
+  }, [loadData]);
 
   return (
     <DashboardShell>
@@ -101,9 +110,7 @@ export default function CashbookPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                        Cashbook Table/View Placeholder (Data is loaded)
-                    </div>
+                    <DataTable columns={cashbookColumns} data={cashbookEntries} />
                 )}
               </CardContent>
             </Card>
