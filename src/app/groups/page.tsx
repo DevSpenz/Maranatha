@@ -1,66 +1,62 @@
+"use client";
+
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, Percent } from "lucide-react";
+import { Users, DollarSign, Percent, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { GroupForm } from "@/components/forms/GroupForm";
 import { DataTable } from "@/components/data-table/DataTable";
 import { columns } from "./columns";
 import { Group } from "@/types";
-import { MetricCard } from "@/components/dashboard/MetricCard"; // Reusing MetricCard for consistency
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { useState, useEffect, useCallback } from "react";
+import { fetchGroups } from "@/lib/data/groups";
+import { toast } from "sonner";
 
-// Mock Group Summary Data
-const mockGroupSummary = [
-  { title: "Total Groups", value: "5", Icon: Users, description: "Currently active groups" },
-  { title: "Total Group Funds (KES)", value: "KSh 16,500", Icon: DollarSign, description: "Funds available for disbursement" },
-  { title: "Average Disbursement Ratio", value: "20%", Icon: Percent, description: "Average ratio across all groups" },
+// Initial state for summary cards while loading
+const initialGroupSummary = [
+  { title: "Total Groups", value: "...", Icon: Users, description: "Currently active groups" },
+  { title: "Total Group Funds (KES)", value: "...", Icon: DollarSign, description: "Funds available for disbursement" },
+  { title: "Average Disbursement Ratio", value: "...", Icon: Percent, description: "Average ratio across all groups" },
 ];
-
-// Mock Group Data for the table
-const mockGroups: Group[] = [
-    {
-        id: "g1",
-        name: "Primary Education Support",
-        description: "Funds allocated for school fees and basic supplies for primary students.",
-        disbursementRatio: 20,
-        currentBalanceKes: 10000,
-        beneficiaryCount: 50,
-    },
-    {
-        id: "g2",
-        name: "Vocational Training",
-        description: "Funds for skill development and apprenticeship programs.",
-        disbursementRatio: 30,
-        currentBalanceKes: 5000,
-        beneficiaryCount: 25,
-    },
-    {
-        id: "g3",
-        name: "Medical Aid",
-        description: "Emergency medical support and health checkups.",
-        disbursementRatio: 15,
-        currentBalanceKes: 1500,
-        beneficiaryCount: 10,
-    },
-    {
-        id: "g4",
-        name: "General Overhead",
-        description: "Administrative costs and operational expenses.",
-        disbursementRatio: 5,
-        currentBalanceKes: 0,
-        beneficiaryCount: 0,
-    },
-    {
-        id: "g5",
-        name: "Emergency Relief",
-        description: "Funds reserved for unforeseen crises.",
-        disbursementRatio: 30,
-        currentBalanceKes: 0,
-        beneficiaryCount: 0,
-    },
-];
-
 
 export default function GroupsPage() {
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [summary, setSummary] = useState(initialGroupSummary);
+
+  const loadGroups = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedGroups = await fetchGroups();
+      setGroups(fetchedGroups);
+      
+      // Calculate summary metrics
+      const totalBalance = fetchedGroups.reduce((sum, g) => sum + g.currentBalanceKes, 0);
+      const totalRatio = fetchedGroups.reduce((sum, g) => sum + g.disbursementRatio, 0);
+      const avgRatio = fetchedGroups.length > 0 ? (totalRatio / fetchedGroups.length).toFixed(0) : '0';
+
+      setSummary([
+        { ...initialGroupSummary[0], value: fetchedGroups.length.toString() },
+        { 
+            ...initialGroupSummary[1], 
+            value: `KSh ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` 
+        },
+        { ...initialGroupSummary[2], value: `${avgRatio}%` },
+      ]);
+
+    } catch (error) {
+      toast.error("Failed to load group data.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadGroups();
+  }, [loadGroups]);
+
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -70,13 +66,13 @@ export default function GroupsPage() {
 
         {/* Group Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          {mockGroupSummary.map((summary) => (
+          {summary.map((s) => (
             <MetricCard
-              key={summary.title}
-              title={summary.title}
-              value={summary.value}
-              description={summary.description}
-              Icon={summary.Icon}
+              key={s.title}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              Icon={s.Icon}
             />
           ))}
         </div>
@@ -84,7 +80,7 @@ export default function GroupsPage() {
         <Separator />
         
         {/* New Group Creation Form */}
-        <GroupForm />
+        <GroupForm onGroupCreated={loadGroups} />
 
         <Separator />
 
@@ -97,7 +93,13 @@ export default function GroupsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={mockGroups} />
+            {isLoading ? (
+                <div className="flex justify-center items-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <DataTable columns={columns} data={groups} />
+            )}
           </CardContent>
         </Card>
       </div>

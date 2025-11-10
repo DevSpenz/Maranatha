@@ -18,6 +18,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useSession } from "@/components/auth/SessionContextProvider";
+import { createGroup } from "@/lib/data/groups";
 
 // --- Zod Schema Definition ---
 const GroupSchema = z.object({
@@ -32,15 +34,12 @@ const GroupSchema = z.object({
 
 type GroupFormValues = z.infer<typeof GroupSchema>;
 
-// Mock submission function
-const mockSubmitGroup = async (data: GroupFormValues) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-    console.log("Group Registered:", data);
-    return { success: true, name: data.name };
-};
+interface GroupFormProps {
+    onGroupCreated: () => void;
+}
 
-
-export function GroupForm() {
+export function GroupForm({ onGroupCreated }: GroupFormProps) {
+  const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<GroupFormValues>({
@@ -53,16 +52,29 @@ export function GroupForm() {
   });
 
   async function onSubmit(data: GroupFormValues) {
+    if (!user) {
+        toast.error("Authentication required to create a group.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
-        await mockSubmitGroup(data);
+        await createGroup({
+            name: data.name,
+            description: data.description,
+            disbursementRatio: data.disbursementRatio,
+            user_id: user.id,
+        });
+        
         toast.success(`Group '${data.name}' created successfully!`);
         form.reset({
             name: "",
             description: "",
             disbursementRatio: 0,
         });
+        onGroupCreated();
     } catch (error) {
+        console.error(error);
         toast.error("Failed to create group.");
     } finally {
         setIsSubmitting(false);
