@@ -1,18 +1,65 @@
+"use client";
+
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, BookOpen, TrendingUp } from "lucide-react";
+import { DollarSign, BookOpen, TrendingUp, Loader2 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
+import { useState, useEffect, useCallback } from "react";
+import { fetchFinancialSummary } from "@/lib/data/cashbook";
+import { formatKes } from "@/lib/utils";
+import { toast } from "sonner";
 
-// Mock Cashbook Summary Data
-const mockCashbookSummary = [
-  { title: "Total Cash In (YTD)", value: "KSh 1,200,000", Icon: DollarSign, description: "Total donations received" },
-  { title: "Total Cash Out (YTD)", value: "KSh 950,000", Icon: TrendingUp, description: "Total funds disbursed" },
-  { title: "Current Cash Balance", value: "KSh 250,000", Icon: BookOpen, description: "Main account balance" },
+// Initial state for summary cards while loading
+const initialCashbookSummary = [
+  { title: "Total Cash In (YTD)", value: "...", Icon: DollarSign, description: "Total donations received" },
+  { title: "Total Cash Out (YTD)", value: "...", Icon: TrendingUp, description: "Total funds disbursed to groups" },
+  { title: "Main Cash Balance", value: "...", Icon: BookOpen, description: "Funds available for allocation" },
 ];
 
 export default function CashbookPage() {
+  const [summary, setSummary] = useState(initialCashbookSummary);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadSummary = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const financialSummary = await fetchFinancialSummary();
+      
+      setSummary([
+        { 
+            title: "Total Cash In (YTD)", 
+            value: formatKes(financialSummary.totalDonationsKes), 
+            Icon: DollarSign, 
+            description: "Total donations received" 
+        },
+        { 
+            title: "Total Cash Out (YTD)", 
+            value: formatKes(financialSummary.totalDisbursementsKes), 
+            Icon: TrendingUp, 
+            description: "Total funds disbursed to groups" 
+        },
+        { 
+            title: "Main Cash Balance", 
+            value: formatKes(financialSummary.mainCashBalance), 
+            Icon: BookOpen, 
+            description: "Funds available for allocation" 
+        },
+      ]);
+
+    } catch (error) {
+      toast.error("Failed to load cashbook summary.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
   return (
     <DashboardShell>
       <div className="space-y-6">
@@ -20,13 +67,13 @@ export default function CashbookPage() {
         
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          {mockCashbookSummary.map((summary) => (
+          {summary.map((s) => (
             <MetricCard
-              key={summary.title}
-              title={summary.title}
-              value={summary.value}
-              description={summary.description}
-              Icon={summary.Icon}
+              key={s.title}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              Icon={s.Icon}
             />
           ))}
         </div>
@@ -49,9 +96,15 @@ export default function CashbookPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-                  Cashbook Table/View Placeholder
-                </div>
+                {isLoading ? (
+                    <div className="h-[400px] flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                        Cashbook Table/View Placeholder (Data is loaded)
+                    </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
