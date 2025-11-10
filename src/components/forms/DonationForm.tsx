@@ -17,6 +17,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { DatePicker } from "./DatePicker";
+import { format } from "date-fns";
 
 // --- Zod Schema Definition ---
 const DonationSchema = z.object({
@@ -29,8 +31,8 @@ const DonationSchema = z.object({
   exchangeRate: z.coerce.number().min(1, {
     message: "Exchange rate must be greater than zero.",
   }),
-  dateReceived: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
-    message: "Invalid date format.",
+  dateReceived: z.date({
+    required_error: "A date of receipt is required.",
   }),
 });
 
@@ -40,7 +42,7 @@ type DonationFormValues = z.infer<typeof DonationSchema>;
 const mockSubmitDonation = async (data: DonationFormValues) => {
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
     const kesAmount = data.sekAmount * data.exchangeRate;
-    console.log("Donation Recorded:", { ...data, kesAmount });
+    console.log("Donation Recorded:", { ...data, kesAmount, dateReceived: format(data.dateReceived, 'yyyy-MM-dd') });
     return { success: true, kesAmount };
 };
 
@@ -55,7 +57,7 @@ export function DonationForm() {
       donorName: "",
       sekAmount: 0,
       exchangeRate: 12.00, // Default rate placeholder
-      dateReceived: new Date().toISOString().split('T')[0],
+      dateReceived: new Date(),
     },
   });
 
@@ -81,7 +83,7 @@ export function DonationForm() {
             donorName: "",
             sekAmount: 0,
             exchangeRate: data.exchangeRate, // Keep rate for convenience
-            dateReceived: new Date().toISOString().split('T')[0],
+            dateReceived: new Date(),
         });
     } catch (error) {
         toast.error("Failed to record donation.");
@@ -155,7 +157,11 @@ export function DonationForm() {
                 <FormItem>
                   <FormLabel>Date Received</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker 
+                        date={field.value} 
+                        setDate={field.onChange} 
+                        placeholder="Select date"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
