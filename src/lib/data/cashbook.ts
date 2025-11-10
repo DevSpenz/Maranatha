@@ -10,6 +10,12 @@ interface FinancialSummary {
     totalSystemBalance: number;
 }
 
+export interface IncomeStatementData {
+    totalDonationsKes: number;
+    totalDisbursementsKes: number;
+    netSurplus: number;
+}
+
 /**
  * Fetches and calculates the overall financial summary metrics.
  */
@@ -56,6 +62,28 @@ export async function fetchFinancialSummary(): Promise<FinancialSummary> {
         totalSystemBalance,
     };
 }
+
+/**
+ * Fetches aggregated data required for the Income Statement (Revenue vs. Expenses).
+ */
+export async function fetchIncomeStatementData(): Promise<IncomeStatementData> {
+    const summary = await fetchFinancialSummary();
+    
+    const totalDonationsKes = summary.totalDonationsKes;
+    const totalDisbursementsKes = summary.totalDisbursementsKes;
+    
+    // Net Surplus is calculated as Revenue (Donations) minus Expenses (Disbursements)
+    // Note: In this simplified model, disbursements are treated as expenses for the purpose of Net Income calculation, 
+    // although technically they are internal fund transfers. We use this structure until true operational expenses are tracked.
+    const netSurplus = totalDonationsKes - totalDisbursementsKes;
+
+    return {
+        totalDonationsKes,
+        totalDisbursementsKes,
+        netSurplus,
+    };
+}
+
 
 /**
  * Fetches all donations and disbursements and merges them into a single chronological cashbook.

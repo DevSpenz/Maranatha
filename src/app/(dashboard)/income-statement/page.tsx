@@ -1,8 +1,34 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { fetchIncomeStatementData, IncomeStatementData } from "@/lib/data/cashbook";
+import { toast } from "sonner";
+import { IncomeStatementReport } from "@/components/reports/IncomeStatementReport";
 
 export default function IncomeStatementPage() {
+  const [data, setData] = useState<IncomeStatementData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedData = await fetchIncomeStatementData();
+      setData(fetchedData);
+    } catch (error) {
+      toast.error("Failed to load Income Statement data.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -10,19 +36,19 @@ export default function IncomeStatementPage() {
           <h1 className="text-3xl font-bold tracking-tight">Income Statement</h1>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Statement of Financial Performance</CardTitle>
-          <CardDescription>
-            View the organization's revenues and expenses over a specific period.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[500px] flex items-center justify-center text-muted-foreground">
-            Income Statement Report Placeholder
-          </div>
-        </CardContent>
-      </Card>
+      {isLoading ? (
+          <Card className="h-[500px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </Card>
+      ) : data ? (
+          <IncomeStatementReport data={data} />
+      ) : (
+          <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                  No financial data available to generate the Income Statement.
+              </CardContent>
+          </Card>
+      )}
       
       <Separator />
       
