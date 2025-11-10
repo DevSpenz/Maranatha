@@ -19,7 +19,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { useState } from "react";
 import { useSession } from "@/components/auth/SessionContextProvider";
-import { createGroup } from "@/lib/data/groups";
+import { createGroup, updateGroup } from "@/lib/data/groups";
+import { Group } from "@/types";
 
 // --- Zod Schema Definition ---
 const GroupSchema = z.object({
@@ -34,62 +35,74 @@ type GroupFormValues = z.infer<typeof GroupSchema>;
 
 interface GroupFormProps {
     onGroupCreated: () => void;
+    initialData?: Group;
 }
 
-export function GroupForm({ onGroupCreated }: GroupFormProps) {
+export function GroupForm({ onGroupCreated, initialData }: GroupFormProps) {
   const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isEditMode = !!initialData;
 
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(GroupSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      kronaRatio: 0,
+      name: initialData?.name || "",
+      description: initialData?.description || "",
+      kronaRatio: initialData?.kronaRatio || 0,
     },
   });
 
   async function onSubmit(data: GroupFormValues) {
     if (!user) {
-        toast.error("Authentication required to create a group.");
+        toast.error("Authentication required to save changes.");
         return;
     }
 
     setIsSubmitting(true);
     try {
-        await createGroup({
-            name: data.name,
-            description: data.description,
-            // Note: We set the old disbursementRatio to 0, as it's now superseded by kronaRatio for distribution logic
-            disbursementRatio: 0, 
-            kronaRatio: data.kronaRatio,
-            user_id: user.id,
-        });
+        if (isEditMode && initialData) {
+            await updateGroup(initialData.id, {
+                name: data.name,
+                description: data.description,
+                kronaRatio: data.kronaRatio,
+            });
+            toast.success(`Group '${data.name}' updated successfully!`);
+        } else {
+            await createGroup({
+                name: data.name,
+                description: data.description,
+                // Note: We set the old disbursementRatio to 0, as it's now superseded by kronaRatio for distribution logic
+                disbursementRatio: 0, 
+                kronaRatio: data.kronaRatio,
+                user_id: user.id,
+            });
+            toast.success(`Group '${data.name}' created successfully!`);
+            form.reset({
+                name: "",
+                description: "",
+                kronaRatio: data.kronaRatio, // Keep rate for convenience
+            });
+        }
         
-        toast.success(`Group '${data.name}' created successfully!`);
-        form.reset({
-            name: "",
-            description: "",
-            kronaRatio: 0,
-        });
         onGroupCreated();
     } catch (error) {
         console.error(error);
-        toast.error("Failed to create group.");
+        toast.error(isEditMode ? "Failed to update group." : "Failed to create group.");
     } finally {
         setIsSubmitting(false);
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={isEditMode ? "border-none shadow-none" : ""}>
+      <CardHeader className={isEditMode ? "hidden" : ""}>
         <CardTitle>Create New Group</CardTitle>
         <CardDescription>
           Define a new beneficiary group and set its Krona ratio weight for proportional fund distribution.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isEditMode ? "p-0" : ""}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
             
@@ -156,7 +169,7 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
                 ) : (
                     <Save className="mr-2 h-4 w-4" />
                 )}
-                {isSubmitting ? "Creating Group..." : "Save Group"}
+                {isSubmitting ? (isEditMode ? "Saving Changes..." : "Creating Group...") : (isEditMode ? "Save Changes" : "Save Group")}
               </Button>
             </div>
           </form>

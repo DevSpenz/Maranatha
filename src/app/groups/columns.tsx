@@ -17,13 +17,15 @@ import { ConfirmationDialog } from "@/components/dialogs/ConfirmationDialog";
 import { useState } from "react";
 import { deleteGroup } from "@/lib/data/groups";
 import { toast } from "sonner";
+import { GroupEditDialog } from "@/components/dialogs/GroupEditDialog"; // Import Edit Dialog
 
 interface GroupActionsProps {
     group: Group;
     onGroupDeleted: () => void;
+    onGroupUpdated: () => void; // New prop for refresh
 }
 
-const GroupActions = ({ group, onGroupDeleted }: GroupActionsProps) => {
+const GroupActions = ({ group, onGroupDeleted, onGroupUpdated }: GroupActionsProps) => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const handleDelete = async () => {
@@ -52,9 +54,17 @@ const GroupActions = ({ group, onGroupDeleted }: GroupActionsProps) => {
                         Copy Group ID
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center">
-                        <Edit className="mr-2 h-4 w-4" /> Edit Group
-                    </DropdownMenuItem>
+                    
+                    <GroupEditDialog
+                        groupId={group.id}
+                        onSuccess={onGroupUpdated}
+                        trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" /> Edit Group
+                            </DropdownMenuItem>
+                        }
+                    />
+
                     <DropdownMenuItem 
                         className="flex items-center text-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
@@ -130,7 +140,7 @@ export const columns = (onGroupDeleted: () => void): ColumnDef<Group>[] => [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      return <GroupActions group={row.original} onGroupDeleted={onGroupDeleted} />;
+      return <GroupActions group={row.original} onGroupDeleted={onGroupDeleted} onGroupUpdated={onGroupDeleted} />;
     },
   },
 ];
