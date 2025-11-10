@@ -11,6 +11,7 @@ import { fetchBeneficiaries } from "@/lib/data/beneficiaries";
 import { fetchGroups } from "@/lib/data/groups";
 import { toast } from "sonner";
 import { BeneficiaryFormDialog } from "@/components/dialogs/BeneficiaryFormDialog";
+import { BeneficiaryPaymentDialog } from "@/components/dialogs/BeneficiaryPaymentDialog"; // Import new dialog
 
 export default function BeneficiariesPage() {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
@@ -48,7 +49,10 @@ export default function BeneficiariesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Beneficiary Management</h1>
-        <BeneficiaryFormDialog onSuccess={loadData} />
+        <div className="flex gap-2">
+            <BeneficiaryPaymentDialog onSuccess={loadData} />
+            <BeneficiaryFormDialog onSuccess={loadData} />
+        </div>
       </div>
 
       <Separator />
