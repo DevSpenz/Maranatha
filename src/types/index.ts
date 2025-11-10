@@ -38,3 +38,13 @@ export interface Beneficiary {
   status: 'active' | 'inactive' | 'graduated';
   groupId: string; // Foreign key to Group
 }
+
+export interface Disbursement {
+  id: string;
+  groupId: string;
+  groupName: string;
+  amountKes: number;
+  notes?: string;
+  dateDisbursed: Date;
+  recordedBy: string;
+}

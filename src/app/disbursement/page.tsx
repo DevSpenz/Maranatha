@@ -4,12 +4,46 @@ import { Separator } from "@/components/ui/separator";
 import { DisbursementForm } from "@/components/forms/DisbursementForm";
 import { DollarSign, TrendingDown, Users } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
+import { DataTable } from "@/components/data-table/DataTable";
+import { columns } from "./columns";
+import { Disbursement } from "@/types";
 
 // Mock Disbursement Summary Data
 const mockDisbursementSummary = [
   { title: "Main Cash Balance (KES)", value: "KSh 20,000", Icon: DollarSign, description: "Available for allocation" },
   { title: "Total Disbursed YTD", value: "KSh 950,000", Icon: TrendingDown, description: "Funds moved to groups" },
   { title: "Groups with Zero Balance", value: "2", Icon: Users, description: "Requires immediate allocation" },
+];
+
+// Mock Disbursement History Data
+const mockDisbursements: Disbursement[] = [
+    {
+        id: "disp1",
+        groupId: "g1",
+        groupName: "Primary Education Support",
+        amountKes: 100000,
+        notes: "Q3 2024 initial allocation.",
+        dateDisbursed: new Date(2024, 6, 10),
+        recordedBy: "Admin User",
+    },
+    {
+        id: "disp2",
+        groupId: "g2",
+        groupName: "Vocational Training",
+        amountKes: 50000,
+        notes: "Monthly stipend for July.",
+        dateDisbursed: new Date(2024, 6, 10),
+        recordedBy: "Admin User",
+    },
+    {
+        id: "disp3",
+        groupId: "g1",
+        groupName: "Primary Education Support",
+        amountKes: 20000,
+        notes: "Emergency school supplies purchase.",
+        dateDisbursed: new Date(2024, 6, 25),
+        recordedBy: "Finance Officer",
+    },
 ];
 
 
@@ -39,7 +73,7 @@ export default function DisbursementPage() {
 
         <Separator />
 
-        {/* Disbursement History Table Placeholder */}
+        {/* Disbursement History Table */}
         <Card>
           <CardHeader>
             <CardTitle>Disbursement History</CardTitle>
@@ -48,9 +82,7 @@ export default function DisbursementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              Disbursement History Table Placeholder
-            </div>
+            <DataTable columns={columns} data={mockDisbursements} />
           </CardContent>
         </Card>
       </div>
