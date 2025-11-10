@@ -68,7 +68,7 @@ export default function BeneficiariesPage() {
               </div>
           ) : (
               <DataTable 
-                columns={columns(groupMap)} 
+                columns={columns(groupMap, loadData)} 
                 data={beneficiaries} 
                 searchKey="fullName" // Enable filtering by full name
               />

@@ -60,3 +60,18 @@ export async function createBeneficiary(beneficiaryData: Omit<Beneficiary, 'id' 
         throw new Error("Failed to register beneficiary.");
     }
 }
+
+/**
+ * Deletes a beneficiary by their ID.
+ */
+export async function deleteBeneficiary(beneficiaryId: string) {
+    const { error } = await supabase
+        .from('beneficiaries')
+        .delete()
+        .eq('id', beneficiaryId);
+
+    if (error) {
+        console.error("Error deleting beneficiary:", error);
+        throw new Error("Failed to delete beneficiary.");
+    }
+}

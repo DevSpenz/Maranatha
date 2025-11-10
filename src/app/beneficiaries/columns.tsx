@@ -15,9 +15,72 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ConfirmationDialog } from "@/components/dialogs/ConfirmationDialog";
+import { useState } from "react";
+import { deleteBeneficiary } from "@/lib/data/beneficiaries";
+import { toast } from "sonner";
 
-// Define a function that returns the columns, accepting the group map as an argument
-export const columns = (groupMap: Record<string, string>): ColumnDef<Beneficiary>[] => [
+interface BeneficiaryActionsProps {
+    beneficiary: Beneficiary;
+    onBeneficiaryDeleted: () => void;
+}
+
+const BeneficiaryActions = ({ beneficiary, onBeneficiaryDeleted }: BeneficiaryActionsProps) => {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    const handleDelete = async () => {
+        try {
+            await deleteBeneficiary(beneficiary.id);
+            toast.success(`Beneficiary '${beneficiary.fullName}' deleted successfully.`);
+            onBeneficiaryDeleted();
+        } catch (error) {
+            toast.error("Failed to delete beneficiary.");
+            throw error;
+        }
+    };
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(beneficiary.id)}>
+                        Copy Beneficiary ID
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="flex items-center">
+                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                        className="flex items-center text-destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove Beneficiary
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <ConfirmationDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                title={`Remove Beneficiary: ${beneficiary.fullName}?`}
+                description={`Are you sure you want to permanently remove '${beneficiary.fullName}'? This action cannot be undone.`}
+                confirmText="Yes, Remove Beneficiary"
+                onConfirm={handleDelete}
+            />
+        </>
+    );
+};
+
+
+// Define a function that returns the columns, accepting the group map and delete callback
+export const columns = (groupMap: Record<string, string>, onBeneficiaryDeleted: () => void): ColumnDef<Beneficiary>[] => [
   {
     accessorKey: "fullName",
     header: ({ column }) => {
@@ -87,31 +150,7 @@ export const columns = (groupMap: Record<string, string>): ColumnDef<Beneficiary
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const beneficiary = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(beneficiary.id)}>
-              Copy Beneficiary ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex items-center">
-                <Edit className="mr-2 h-4 w-4" /> Edit Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" /> Remove Beneficiary
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <BeneficiaryActions beneficiary={row.original} onBeneficiaryDeleted={onBeneficiaryDeleted} />;
     },
   },
 ];
