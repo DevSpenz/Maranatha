@@ -13,8 +13,71 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmationDialog } from "@/components/dialogs/ConfirmationDialog";
+import { useState } from "react";
+import { deleteGroup } from "@/lib/data/groups";
+import { toast } from "sonner";
 
-export const columns: ColumnDef<Group>[] = [
+interface GroupActionsProps {
+    group: Group;
+    onGroupDeleted: () => void;
+}
+
+const GroupActions = ({ group, onGroupDeleted }: GroupActionsProps) => {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    const handleDelete = async () => {
+        try {
+            await deleteGroup(group.id);
+            toast.success(`Group '${group.name}' deleted successfully.`);
+            onGroupDeleted();
+        } catch (error) {
+            toast.error("Failed to delete group. Ensure no beneficiaries are linked.");
+            throw error; // Re-throw to keep ConfirmationDialog in loading state if needed
+        }
+    };
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(group.id)}>
+                        Copy Group ID
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="flex items-center">
+                        <Edit className="mr-2 h-4 w-4" /> Edit Group
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                        className="flex items-center text-destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Group
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <ConfirmationDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                title={`Delete Group: ${group.name}?`}
+                description={`Are you sure you want to delete the group '${group.name}'? This action cannot be undone. All associated beneficiaries must be removed or reassigned first.`}
+                confirmText="Yes, Delete Group"
+                onConfirm={handleDelete}
+            />
+        </>
+    );
+};
+
+
+export const columns = (onGroupDeleted: () => void): ColumnDef<Group>[] => [
   {
     accessorKey: "name",
     header: "Group Name",
@@ -67,31 +130,7 @@ export const columns: ColumnDef<Group>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const group = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(group.id)}>
-              Copy Group ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex items-center">
-                <Edit className="mr-2 h-4 w-4" /> Edit Group
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Group
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <GroupActions group={row.original} onGroupDeleted={onGroupDeleted} />;
     },
   },
 ];

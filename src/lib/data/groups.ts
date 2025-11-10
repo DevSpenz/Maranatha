@@ -50,3 +50,18 @@ export async function createGroup(groupData: { name: string, description?: strin
 
     return data;
 }
+
+/**
+ * Deletes a group by its ID.
+ */
+export async function deleteGroup(groupId: string) {
+    const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+
+    if (error) {
+        console.error("Error deleting group:", error);
+        throw new Error("Failed to delete group.");
+    }
+}

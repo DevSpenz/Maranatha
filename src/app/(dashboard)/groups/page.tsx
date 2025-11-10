@@ -92,7 +92,7 @@ export default function GroupsPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
           ) : (
-              <DataTable columns={columns} data={groups} />
+              <DataTable columns={columns(loadGroups)} data={groups} />
           )}
         </CardContent>
       </Card>
