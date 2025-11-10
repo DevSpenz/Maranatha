@@ -25,10 +25,8 @@ import { createGroup } from "@/lib/data/groups";
 const GroupSchema = z.object({
   name: z.string().min(3, { message: "Group name must be at least 3 characters." }),
   description: z.string().max(500).optional(),
-  disbursementRatio: z.coerce.number().min(0, {
-    message: "Ratio cannot be negative.",
-  }).max(100, {
-    message: "Ratio cannot exceed 100%.",
+  kronaRatio: z.coerce.number().min(0, {
+    message: "Krona ratio cannot be negative.",
   }),
 });
 
@@ -47,7 +45,7 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
     defaultValues: {
       name: "",
       description: "",
-      disbursementRatio: 0,
+      kronaRatio: 0,
     },
   });
 
@@ -62,7 +60,9 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
         await createGroup({
             name: data.name,
             description: data.description,
-            disbursementRatio: data.disbursementRatio,
+            // Note: We set the old disbursementRatio to 0, as it's now superseded by kronaRatio for distribution logic
+            disbursementRatio: 0, 
+            kronaRatio: data.kronaRatio,
             user_id: user.id,
         });
         
@@ -70,7 +70,7 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
         form.reset({
             name: "",
             description: "",
-            disbursementRatio: 0,
+            kronaRatio: 0,
         });
         onGroupCreated();
     } catch (error) {
@@ -86,7 +86,7 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
       <CardHeader>
         <CardTitle>Create New Group</CardTitle>
         <CardDescription>
-          Define a new beneficiary group and set its default disbursement ratio (0-100%).
+          Define a new beneficiary group and set its Krona ratio weight for proportional fund distribution.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -108,25 +108,24 @@ export function GroupForm({ onGroupCreated }: GroupFormProps) {
               )}
             />
 
-            {/* Disbursement Ratio */}
+            {/* Krona Ratio */}
             <FormField
               control={form.control}
-              name="disbursementRatio"
+              name="kronaRatio"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Disbursement Ratio (%)</FormLabel>
+                  <FormLabel>Krona Ratio Weight (KR)</FormLabel>
                   <FormControl>
                     <div className="flex items-center">
                         <Input 
                             type="number" 
                             step="1" 
                             min="0" 
-                            max="100" 
-                            placeholder="e.g., 20" 
+                            placeholder="e.g., 1000" 
                             {...field} 
                             onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                         />
-                        <span className="ml-2 text-lg font-semibold text-muted-foreground">%</span>
+                        <span className="ml-2 text-lg font-semibold text-muted-foreground">KR</span>
                     </div>
                   </FormControl>
                   <FormMessage />

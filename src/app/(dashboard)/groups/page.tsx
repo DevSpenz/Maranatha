@@ -16,7 +16,7 @@ import { GroupFormDialog } from "@/components/dialogs/GroupFormDialog";
 const initialGroupSummary = [
   { title: "Total Groups", value: "...", Icon: Users, description: "Currently active groups" },
   { title: "Total Group Funds (KES)", value: "...", Icon: DollarSign, description: "Funds available for disbursement" },
-  { title: "Average Disbursement Ratio", value: "...", Icon: Percent, description: "Average ratio across all groups" },
+  { title: "Total Krona Ratio Weight", value: "...", Icon: Percent, description: "Sum of all group KR weights" },
 ];
 
 export default function GroupsPage() {
@@ -32,8 +32,7 @@ export default function GroupsPage() {
       
       // Calculate summary metrics
       const totalBalance = fetchedGroups.reduce((sum, g) => sum + g.currentBalanceKes, 0);
-      const totalRatio = fetchedGroups.reduce((sum, g) => sum + g.disbursementRatio, 0);
-      const avgRatio = fetchedGroups.length > 0 ? (totalRatio / fetchedGroups.length).toFixed(0) : '0';
+      const totalKronaRatio = fetchedGroups.reduce((sum, g) => sum + g.kronaRatio, 0);
 
       setSummary([
         { ...initialGroupSummary[0], value: fetchedGroups.length.toString() },
@@ -41,7 +40,7 @@ export default function GroupsPage() {
             ...initialGroupSummary[1], 
             value: `KSh ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` 
         },
-        { ...initialGroupSummary[2], value: `${avgRatio}%` },
+        { ...initialGroupSummary[2], value: `${totalKronaRatio.toLocaleString()} KR` },
       ]);
 
     } catch (error) {

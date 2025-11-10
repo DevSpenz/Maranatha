@@ -95,13 +95,13 @@ export const columns = (onGroupDeleted: () => void): ColumnDef<Group>[] => [
     ),
   },
   {
-    accessorKey: "disbursementRatio",
-    header: "Ratio",
+    accessorKey: "kronaRatio", // Changed from disbursementRatio
+    header: "KR Weight",
     cell: ({ row }) => {
-      const ratio = parseFloat(row.getValue("disbursementRatio"));
+      const ratio = parseFloat(row.getValue("kronaRatio"));
       return (
         <Badge variant="secondary">
-          {ratio}%
+          {ratio.toLocaleString()} KR
         </Badge>
       );
     },

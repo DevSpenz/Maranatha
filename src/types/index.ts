@@ -19,7 +19,8 @@ export interface Group {
   id: string;
   name: string;
   description: string;
-  disbursementRatio: number; // Percentage, e.g., 0.20 for 20%
+  disbursementRatio: number; // Percentage, e.g., 0.20 for 20% (Kept for legacy/schema compatibility)
+  kronaRatio: number; // New: KR weight for proportional distribution
   currentBalanceKes: number;
   beneficiaryCount: number; // Added for display
 }

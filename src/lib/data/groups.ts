@@ -8,7 +8,7 @@ import { Group } from "@/types";
 export async function fetchGroups(): Promise<Group[]> {
     const { data, error } = await supabase
         .from('groups')
-        .select('id, name, description, disbursement_ratio, current_balance_kes, beneficiary_count')
+        .select('id, name, description, disbursement_ratio, krona_ratio, current_balance_kes, beneficiary_count')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -21,6 +21,7 @@ export async function fetchGroups(): Promise<Group[]> {
         name: g.name,
         description: g.description || '',
         disbursementRatio: parseFloat(g.disbursement_ratio.toString()),
+        kronaRatio: parseFloat(g.krona_ratio.toString()), // Include new field
         currentBalanceKes: parseFloat(g.current_balance_kes.toString()),
         beneficiaryCount: g.beneficiary_count,
     })) as Group[];
@@ -29,7 +30,7 @@ export async function fetchGroups(): Promise<Group[]> {
 /**
  * Creates a new group entry in the database.
  */
-export async function createGroup(groupData: { name: string, description?: string, disbursementRatio: number, user_id: string }) {
+export async function createGroup(groupData: { name: string, description?: string, disbursementRatio: number, kronaRatio: number, user_id: string }) {
     const { data, error } = await supabase
         .from('groups')
         .insert({
@@ -37,6 +38,7 @@ export async function createGroup(groupData: { name: string, description?: strin
             name: groupData.name,
             description: groupData.description,
             disbursement_ratio: groupData.disbursementRatio,
+            krona_ratio: groupData.kronaRatio, // Include new field
             current_balance_kes: 0,
             beneficiary_count: 0,
         })
