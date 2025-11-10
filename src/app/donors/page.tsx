@@ -4,6 +4,40 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PlusCircle } from "lucide-react";
 import { DonationForm } from "@/components/forms/DonationForm";
+import { DataTable } from "@/components/data-table/DataTable";
+import { columns } from "./columns";
+import { Donation } from "@/types";
+
+// Mock Data for Donation History
+const mockDonations: Donation[] = [
+    {
+        id: "d1",
+        donorName: "Swedish Church Aid",
+        sekAmount: 50000,
+        exchangeRate: 12.10,
+        kesAmount: 50000 * 12.10,
+        dateReceived: new Date(2024, 6, 15), // July 15th
+        recordedAt: new Date(2024, 6, 16),
+    },
+    {
+        id: "d2",
+        donorName: "Private Donor A",
+        sekAmount: 10000,
+        exchangeRate: 11.95,
+        kesAmount: 10000 * 11.95,
+        dateReceived: new Date(2024, 5, 20), // June 20th
+        recordedAt: new Date(2024, 5, 21),
+    },
+    {
+        id: "d3",
+        donorName: "EU Grant Fund",
+        sekAmount: 40000,
+        exchangeRate: 12.05,
+        kesAmount: 40000 * 12.05,
+        dateReceived: new Date(2024, 4, 1), // May 1st
+        recordedAt: new Date(2024, 4, 2),
+    },
+];
 
 export default function DonorsPage() {
   return (
@@ -21,7 +55,7 @@ export default function DonorsPage() {
 
         <Separator />
 
-        {/* Donation History Table Placeholder */}
+        {/* Donation History Table */}
         <Card>
           <CardHeader>
             <CardTitle>Donation History</CardTitle>
@@ -30,9 +64,7 @@ export default function DonorsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              Donation History Table Placeholder
-            </div>
+            <DataTable columns={columns} data={mockDonations} />
           </CardContent>
         </Card>
       </div>
