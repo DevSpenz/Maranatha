@@ -4,7 +4,6 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DollarSign, Percent, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { GroupForm } from "@/components/forms/GroupForm";
 import { DataTable } from "@/components/data-table/DataTable";
 import { columns } from "./columns";
 import { Group } from "@/types";
@@ -12,6 +11,7 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { useState, useEffect, useCallback } from "react";
 import { fetchGroups } from "@/lib/data/groups";
 import { toast } from "sonner";
+import { GroupFormDialog } from "@/components/dialogs/GroupFormDialog";
 
 // Initial state for summary cards while loading
 const initialGroupSummary = [
@@ -62,6 +62,7 @@ export default function GroupsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Group Management</h1>
+          <GroupFormDialog onSuccess={loadGroups} />
         </div>
 
         {/* Group Summary Cards */}
@@ -79,11 +80,6 @@ export default function GroupsPage() {
 
         <Separator />
         
-        {/* New Group Creation Form */}
-        <GroupForm onGroupCreated={loadGroups} />
-
-        <Separator />
-
         {/* Group List Table */}
         <Card>
           <CardHeader>
