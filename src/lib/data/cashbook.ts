@@ -23,6 +23,14 @@ export interface BalanceSheetData {
     accumulatedFundBalance: number; // Should equal totalAssets in this simplified model
 }
 
+export interface TrialBalanceData {
+    totalDonationsCredit: number;
+    totalDisbursementsDebit: number;
+    totalDebits: number;
+    totalCredits: number;
+    isBalanced: boolean;
+}
+
 // Helper function to apply date filters to a query builder
 function applyDateFilter(query: any, dateColumn: string, startDate?: Date, endDate?: Date) {
     if (startDate) {
@@ -138,6 +146,51 @@ export async function fetchBalanceSheetData(): Promise<BalanceSheetData> {
         totalGroupBalance: summary.totalGroupBalance,
         totalAssets,
         accumulatedFundBalance,
+    };
+}
+
+/**
+ * Fetches aggregated data required for the Trial Balance.
+ * In this simplified system, we treat Donations as Credits and Disbursements as Debits 
+ * to the main cash account, plus the resulting Net Surplus/Deficit.
+ */
+export async function fetchTrialBalanceData(startDate?: Date, endDate?: Date): Promise<TrialBalanceData> {
+    const summary = await fetchFinancialSummary(startDate, endDate);
+
+    // In a simplified cash-based system:
+    // Total Donations (Inflow) = Credit
+    const totalDonationsCredit = summary.totalDonationsKes;
+    
+    // Total Disbursements (Outflow) = Debit
+    const totalDisbursementsDebit = summary.totalDisbursementsKes;
+    
+    // The difference (Net Surplus/Deficit) is the balancing figure, 
+    // which represents the change in the Main Cash Account balance over the period.
+    const netSurplus = totalDonationsCredit - totalDisbursementsDebit;
+
+    let netSurplusDebit = 0;
+    let netSurplusCredit = 0;
+
+    if (netSurplus > 0) {
+        // If there is a surplus, it's a Credit balance (increase in equity/cash)
+        netSurplusCredit = netSurplus;
+    } else if (netSurplus < 0) {
+        // If there is a deficit, it's a Debit balance (decrease in equity/cash)
+        netSurplusDebit = Math.abs(netSurplus);
+    }
+
+    // Total Debits = Disbursements + Net Deficit (if any)
+    const totalDebits = totalDisbursementsDebit + netSurplusDebit;
+    
+    // Total Credits = Donations + Net Surplus (if any)
+    const totalCredits = totalDonationsCredit + netSurplusCredit;
+
+    return {
+        totalDonationsCredit,
+        totalDisbursementsDebit,
+        totalDebits,
+        totalCredits,
+        isBalanced: Math.round(totalDebits * 100) === Math.round(totalCredits * 100), // Use rounding for floating point safety
     };
 }
 

@@ -1,8 +1,44 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { fetchTrialBalanceData, TrialBalanceData } from "@/lib/data/cashbook";
+import { toast } from "sonner";
+import { DateRangePicker } from "@/components/forms/DateRangePicker";
+import { DateRange } from "react-day-picker";
+import { endOfDay, startOfYear } from "date-fns";
+import { TrialBalanceReport } from "@/components/reports/TrialBalanceReport";
 
 export default function TrialBalancePage() {
+  const [data, setData] = useState<TrialBalanceData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfYear(new Date()),
+    to: endOfDay(new Date()),
+  });
+
+  const loadData = useCallback(async (range: DateRange | undefined) => {
+    setIsLoading(true);
+    try {
+      const startDate = range?.from;
+      const endDate = range?.to;
+      
+      const fetchedData = await fetchTrialBalanceData(startDate, endDate);
+      setData(fetchedData);
+    } catch (error) {
+      toast.error("Failed to load Trial Balance data.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData(dateRange);
+  }, [dateRange, loadData]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -11,31 +47,37 @@ export default function TrialBalancePage() {
       </div>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Account Balances Summary</CardTitle>
-          <CardDescription>
-            A list of all general ledger accounts and their debit or credit balances.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[500px] flex items-center justify-center text-muted-foreground">
-            Trial Balance Report Placeholder
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Separator />
-      
-      <Card>
           <CardHeader>
               <CardTitle>Report Options</CardTitle>
+              <CardDescription>
+                Select the period for which you want to view the trial balance.
+              </CardDescription>
           </CardHeader>
           <CardContent>
-              <div className="text-muted-foreground">
-                  Date selection and export options placeholder.
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <DateRangePicker date={dateRange} setDate={setDateRange} />
+                  <p className="text-sm text-muted-foreground">
+                      Showing balances from {dateRange?.from ? dateRange.from.toLocaleDateString() : 'start'} to {dateRange?.to ? dateRange.to.toLocaleDateString() : 'today'}.
+                  </p>
               </div>
           </CardContent>
       </Card>
+
+      {isLoading ? (
+          <Card className="h-[500px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </Card>
+      ) : data ? (
+          <TrialBalanceReport data={data} />
+      ) : (
+          <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                  No financial data available for the selected period.
+              </CardContent>
+          </Card>
+      )}
+      
+      <Separator />
     </div>
   );
 }
