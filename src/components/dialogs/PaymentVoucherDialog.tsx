@@ -14,7 +14,9 @@ import {
 import { BeneficiaryPayment } from "@/types";
 import { fetchPaymentById } from "@/lib/data/beneficiary-payments";
 import { toast } from "sonner";
-import { PaymentVoucher } from "@/components/reports/PaymentVoucher";
+import { generatePaymentVoucherPdf } from "@/lib/data/pdf-generator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PaymentVoucherDialogProps {
   paymentId: string;
@@ -25,6 +27,8 @@ export function PaymentVoucherDialog({ paymentId, trigger }: PaymentVoucherDialo
   const [open, setOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<BeneficiaryPayment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number>(12.00); // Default rate
 
   const loadPayment = async () => {
     setIsLoading(true);
@@ -48,6 +52,20 @@ export function PaymentVoucherDialog({ paymentId, trigger }: PaymentVoucherDialo
     }
   }, [open, paymentId]);
 
+  const handleGeneratePdf = async () => {
+    if (!paymentData) return;
+
+    setIsGenerating(true);
+    try {
+        await generatePaymentVoucherPdf(paymentId, exchangeRate);
+        setOpen(false);
+    } catch (error) {
+        // Error handled by utility function
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -57,20 +75,49 @@ export function PaymentVoucherDialog({ paymentId, trigger }: PaymentVoucherDialo
             </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Payment Voucher Details</DialogTitle>
+          <DialogTitle>Generate Payment Voucher PDF</DialogTitle>
           <DialogDescription>
-            Review and print the official payment voucher for this transaction.
+            Enter the exchange rate (KR/KES) to be included in the official voucher document.
           </DialogDescription>
         </DialogHeader>
         
         {isLoading ? (
-            <div className="flex justify-center items-center h-64">
+            <div className="flex justify-center items-center h-32">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : paymentData ? (
-            <PaymentVoucher payment={paymentData} />
+            <div className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="exchangeRate">Exchange Rate (KR/KES)</Label>
+                    <Input 
+                        id="exchangeRate"
+                        type="number" 
+                        step="0.01"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
+                        placeholder="e.g., 12.50"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        This rate will be printed on the voucher for reference.
+                    </p>
+                </div>
+                
+                <div className="flex justify-end">
+                    <Button 
+                        onClick={handleGeneratePdf} 
+                        disabled={isGenerating || exchangeRate <= 0}
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Printer className="mr-2 h-4 w-4" />
+                        )}
+                        {isGenerating ? "Generating PDF..." : "Generate & Download PDF"}
+                    </Button>
+                </div>
+            </div>
         ) : (
             <div className="p-4 text-center text-destructive">
                 Error loading payment data.
