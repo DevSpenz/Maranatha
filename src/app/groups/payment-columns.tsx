@@ -6,6 +6,17 @@ import { format } from "date-fns";
 import { formatKes } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Printer } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PaymentVoucherDialog } from "@/components/dialogs/PaymentVoucherDialog";
 
 export const groupPaymentColumns: ColumnDef<BeneficiaryPayment>[] = [
   {
@@ -53,5 +64,37 @@ export const groupPaymentColumns: ColumnDef<BeneficiaryPayment>[] = [
         {row.getValue("notes") || "N/A"}
       </div>
     ),
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const paymentId = row.original.id;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Payment Actions</DropdownMenuLabel>
+            <PaymentVoucherDialog
+                paymentId={paymentId}
+                trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center cursor-pointer">
+                        <Printer className="mr-2 h-4 w-4" /> View Voucher
+                    </DropdownMenuItem>
+                }
+            />
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(paymentId)}>
+              Copy Payment ID
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];

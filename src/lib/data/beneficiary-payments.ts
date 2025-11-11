@@ -105,23 +105,57 @@ export async function createEqualSplitPaymentRun(paymentData: {
     return { totalPaid, paymentsCount } as PaymentRunResult;
 }
 
+const PAYMENT_SELECT_FIELDS = `
+    id, 
+    group_id, 
+    beneficiary_id, 
+    amount_kes, 
+    payment_run_id, 
+    notes, 
+    date_paid, 
+    created_at,
+    groups (name),
+    beneficiaries (full_name)
+`;
+
+/**
+ * Fetches a single payment record by ID.
+ */
+export async function fetchPaymentById(paymentId: string): Promise<BeneficiaryPayment | null> {
+    const { data, error } = await supabase
+        .from('beneficiary_payments')
+        .select(PAYMENT_SELECT_FIELDS)
+        .eq('id', paymentId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching single payment:", error);
+        throw new Error("Failed to load payment details.");
+    }
+    
+    if (!data) return null;
+
+    return {
+        id: data.id,
+        groupId: data.group_id,
+        groupName: (data.groups as { name: string }).name,
+        beneficiaryId: data.beneficiary_id,
+        beneficiaryName: (data.beneficiaries as { full_name: string }).full_name,
+        amountKes: parseFloat(data.amount_kes.toString()),
+        paymentRunId: data.payment_run_id || undefined,
+        notes: data.notes || undefined,
+        datePaid: new Date(data.date_paid),
+        recordedAt: new Date(data.created_at),
+    } as BeneficiaryPayment;
+}
+
 /**
  * Fetches all payments made to a specific beneficiary.
  */
 export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<BeneficiaryPayment[]> {
     const { data, error } = await supabase
         .from('beneficiary_payments')
-        .select(`
-            id, 
-            group_id, 
-            beneficiary_id, 
-            amount_kes, 
-            payment_run_id, 
-            notes, 
-            date_paid, 
-            created_at,
-            groups (name)
-        `)
+        .select(PAYMENT_SELECT_FIELDS)
         .eq('beneficiary_id', beneficiaryId)
         .order('date_paid', { ascending: false });
 
@@ -135,6 +169,7 @@ export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<B
         groupId: p.group_id,
         groupName: (p.groups as { name: string }).name,
         beneficiaryId: p.beneficiary_id,
+        beneficiaryName: (p.beneficiaries as { full_name: string }).full_name,
         amountKes: parseFloat(p.amount_kes.toString()),
         paymentRunId: p.payment_run_id || undefined,
         notes: p.notes || undefined,
@@ -149,18 +184,7 @@ export async function fetchBeneficiaryPayments(beneficiaryId: string): Promise<B
 export async function fetchBeneficiaryPaymentsByGroupId(groupId: string): Promise<BeneficiaryPayment[]> {
     const { data, error } = await supabase
         .from('beneficiary_payments')
-        .select(`
-            id, 
-            group_id, 
-            beneficiary_id, 
-            amount_kes, 
-            payment_run_id, 
-            notes, 
-            date_paid, 
-            created_at,
-            groups (name),
-            beneficiaries (full_name)
-        `)
+        .select(PAYMENT_SELECT_FIELDS)
         .eq('group_id', groupId)
         .order('date_paid', { ascending: false });
 
