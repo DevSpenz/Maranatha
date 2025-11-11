@@ -113,7 +113,11 @@ export const columns = (groupMap: Record<string, string>, onBeneficiaryUpdated: 
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("fullName")}</div>,
+    cell: ({ row }) => (
+        <Link href={`/beneficiaries/${row.original.id}`} className="font-medium text-primary hover:underline">
+            {row.getValue("fullName")}
+        </Link>
+    ),
   },
   {
     accessorKey: "sponsorNumber",
