@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-// Using the root import path for better Deno compatibility
-import PDFDocument from 'https://esm.sh/pdfkit@0.13.0' 
+import { jsPDF } from 'https://esm.sh/jspdf@2.5.1' 
 import { format } from 'https://esm.sh/date-fns@3.6.0'
 
 // Helper function to format KES currency
@@ -90,110 +89,142 @@ serve(async (req) => {
         datePaid: new Date(paymentData.date_paid),
     };
 
-    // 4. Generate PDF
-    const doc = new PDFDocument({ 
-        size: 'A4', 
-        margin: 50 
+    // 4. Generate PDF using jsPDF
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
     });
     
-    const buffers: Uint8Array[] = [];
-    doc.on('data', (chunk) => buffers.push(chunk));
-    doc.on('end', () => {});
-
-    const PADDING = 50;
-    const VOUCHER_WIDTH = 500;
-    let y = PADDING;
+    const MARGIN = 15;
+    let y = MARGIN;
+    const LINE_HEIGHT = 7;
+    const VOUCHER_WIDTH = 180; // A4 width is 210mm, so 180mm width is good
 
     // --- Header ---
-    doc.fontSize(18).font('Helvetica-Bold').text('Maranatha FMS', PADDING, y);
-    doc.fontSize(10).font('Helvetica').text('Beneficiary Payment Voucher', PADDING, y + 20);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Maranatha FMS', MARGIN, y);
+    y += LINE_HEIGHT;
     
-    doc.fontSize(12).font('Helvetica-Bold').text(`Voucher ID: ${payment.id.substring(0, 8)}`, PADDING + VOUCHER_WIDTH - 150, y, { width: 150, align: 'right' });
-    doc.fontSize(10).font('Helvetica').text(`Date Paid: ${format(payment.datePaid, 'PPP')}`, PADDING + VOUCHER_WIDTH - 150, y + 18, { width: 150, align: 'right' });
-    doc.fontSize(10).text(`Transaction ID: ${payment.paymentRunId ? payment.paymentRunId.substring(0, 8) : 'N/A'}`, PADDING + VOUCHER_WIDTH - 150, y + 30, { width: 150, align: 'right' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Beneficiary Payment Voucher', MARGIN, y);
+    
+    // Right aligned header info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Voucher ID: ${payment.id.substring(0, 8)}`, MARGIN + VOUCHER_WIDTH, y - LINE_HEIGHT, { align: 'right' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date Paid: ${format(payment.datePaid, 'PPP')}`, MARGIN + VOUCHER_WIDTH, y, { align: 'right' });
+    y += LINE_HEIGHT;
+    doc.text(`Transaction ID: ${payment.paymentRunId ? payment.paymentRunId.substring(0, 8) : 'N/A'}`, MARGIN + VOUCHER_WIDTH, y, { align: 'right' });
+    y += LINE_HEIGHT * 2;
 
-    y += 60;
-    doc.moveTo(PADDING, y).lineTo(PADDING + VOUCHER_WIDTH, y).stroke(); // Separator line
+    // Separator line
+    doc.line(MARGIN, y, MARGIN + VOUCHER_WIDTH, y);
+    y += LINE_HEIGHT;
 
     // --- Recipient Details ---
-    y += 15;
-    doc.fontSize(10).font('Helvetica-Bold').text('Paid To:', PADDING, y);
-    doc.fontSize(14).font('Helvetica-Bold').text(payment.beneficiaryName, PADDING, y + 15);
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('Paid To:', MARGIN, y);
+    doc.text('Source Group:', MARGIN + VOUCHER_WIDTH / 2, y);
+    y += LINE_HEIGHT;
     
-    doc.fontSize(10).font('Helvetica-Bold').text('Source Group:', PADDING + VOUCHER_WIDTH / 2, y);
-    doc.fontSize(14).font('Helvetica-Bold').text(payment.groupName, PADDING + VOUCHER_WIDTH / 2, y + 15);
-    y += 40;
+    doc.setFontSize(14).setFont('helvetica', 'bold');
+    doc.text(payment.beneficiaryName, MARGIN, y);
+    doc.text(payment.groupName, MARGIN + VOUCHER_WIDTH / 2, y);
+    y += LINE_HEIGHT * 2;
 
     // --- Payment Details Table ---
-    const tableTop = y;
-    const col1 = PADDING;
-    const col2 = PADDING + 300;
-    const col3 = PADDING + 400;
-    const rowHeight = 20;
+    const tableHeaders = ['Description', 'Rate (KR/KES)', 'Amount (KES)'];
+    const tableData = [
+        ['Beneficiary Payment', parseFloat(exchangeRate).toFixed(2), formatKes(payment.amountKes)],
+    ];
+    
+    const colWidths = [100, 40, 40];
+    let currentX = MARGIN;
+    const tableY = y;
 
-    // Table Header
-    doc.fillColor('#000').rect(col1, tableTop, VOUCHER_WIDTH, rowHeight).fill('#f0f0f0');
-    doc.fillColor('#000').fontSize(10).font('Helvetica-Bold').text('Description', col1 + 5, tableTop + 6);
-    doc.text('Rate', col2, tableTop + 6, { width: 95, align: 'right' });
-    doc.text('Amount (KES)', col3, tableTop + 6, { width: 95, align: 'right' });
+    // Draw Table Header
+    doc.setFillColor(240, 240, 240);
+    doc.rect(MARGIN, tableY, VOUCHER_WIDTH, LINE_HEIGHT, 'F');
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    
+    currentX = MARGIN;
+    tableHeaders.forEach((header, index) => {
+        doc.text(header, currentX + 1, tableY + LINE_HEIGHT / 2 + 1, { align: index === 0 ? 'left' : 'right', baseline: 'middle', maxWidth: colWidths[index] - 2 });
+        currentX += colWidths[index];
+    });
+    y += LINE_HEIGHT;
 
-    // Table Row 1: Payment Amount
-    y = tableTop + rowHeight;
-    doc.fillColor('#000').rect(col1, y, VOUCHER_WIDTH, rowHeight).fill('#ffffff').stroke();
-    doc.fillColor('#000').font('Helvetica').text('Beneficiary Payment', col1 + 5, y + 6);
-    doc.text(parseFloat(exchangeRate).toFixed(2), col2, y + 6, { width: 95, align: 'right' });
-    doc.text(formatKes(payment.amountKes), col3, y + 6, { width: 95, align: 'right' });
-    y += rowHeight;
+    // Draw Table Rows
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    tableData.forEach(row => {
+        currentX = MARGIN;
+        doc.rect(MARGIN, y, VOUCHER_WIDTH, LINE_HEIGHT, 'S'); // Draw border
+        row.forEach((cell, index) => {
+            doc.text(cell, currentX + 1, y + LINE_HEIGHT / 2 + 1, { align: index === 0 ? 'left' : 'right', baseline: 'middle', maxWidth: colWidths[index] - 2 });
+            currentX += colWidths[index];
+        });
+        y += LINE_HEIGHT;
+    });
 
-    // Table Row 2: Total
-    doc.fillColor('#000').rect(col1, y, VOUCHER_WIDTH, rowHeight).fill('#f0f0f0').stroke();
-    doc.fillColor('#000').font('Helvetica-Bold').text('TOTAL AMOUNT PAID', col1 + 5, y + 6);
-    doc.text(formatKes(payment.amountKes), col3, y + 6, { width: 95, align: 'right' });
-    y += rowHeight + 20;
+    // Draw Total Row
+    doc.setFillColor(240, 240, 240);
+    doc.rect(MARGIN, y, VOUCHER_WIDTH, LINE_HEIGHT, 'F');
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('TOTAL AMOUNT PAID', MARGIN + 1, y + LINE_HEIGHT / 2 + 1, { baseline: 'middle' });
+    doc.text(formatKes(payment.amountKes), MARGIN + VOUCHER_WIDTH - 1, y + LINE_HEIGHT / 2 + 1, { align: 'right', baseline: 'middle' });
+    y += LINE_HEIGHT * 2;
 
     // --- Notes ---
-    doc.fontSize(10).font('Helvetica-Bold').text('Notes:', PADDING, y);
-    doc.fontSize(10).font('Helvetica').text(payment.notes || 'N/A', PADDING, y + 15, { width: VOUCHER_WIDTH });
-    y += 50;
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('Notes:', MARGIN, y);
+    y += LINE_HEIGHT / 2;
+    doc.setFont('helvetica', 'normal');
+    doc.text(payment.notes || 'N/A', MARGIN, y, { maxWidth: VOUCHER_WIDTH });
+    y += LINE_HEIGHT * 3;
 
     // --- Signatures ---
     const signatureY = y;
-    const signatureLineLength = 180;
-    const signatureSpacing = 100;
+    const signatureLineLength = 80;
+    const signatureSpacing = 10;
+    const signatureTextYOffset = 5;
 
     // Column 1: Authorization
-    doc.fontSize(10).font('Helvetica-Bold').text('Authorization', PADDING, signatureY);
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('Authorization', MARGIN, signatureY);
     
     // Prepared By
-    doc.moveTo(PADDING, signatureY + 40).lineTo(PADDING + signatureLineLength, signatureY + 40).stroke();
-    doc.fontSize(8).font('Helvetica').text('Prepared By (FMS User)', PADDING, signatureY + 45);
+    doc.line(MARGIN, signatureY + 20, MARGIN + signatureLineLength, signatureY + 20);
+    doc.setFontSize(8).setFont('helvetica', 'normal');
+    doc.text('Prepared By (FMS User)', MARGIN, signatureY + 20 + signatureTextYOffset);
 
     // Approved By
-    doc.moveTo(PADDING, signatureY + 90).lineTo(PADDING + signatureLineLength, signatureY + 90).stroke();
-    doc.fontSize(8).font('Helvetica').text('Approved By (Manager)', PADDING, signatureY + 95);
+    doc.line(MARGIN, signatureY + 50, MARGIN + signatureLineLength, signatureY + 50);
+    doc.text('Approved By (Manager)', MARGIN, signatureY + 50 + signatureTextYOffset);
 
     // Column 2: Recipient Confirmation
-    const col2X = PADDING + VOUCHER_WIDTH / 2;
-    doc.fontSize(10).font('Helvetica-Bold').text('Recipient Confirmation', col2X, signatureY);
+    const col2X = MARGIN + VOUCHER_WIDTH / 2;
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('Recipient Confirmation', col2X, signatureY);
 
     // Recipient Signature
-    doc.moveTo(col2X, signatureY + 40).lineTo(col2X + signatureLineLength, signatureY + 40).stroke();
-    doc.fontSize(8).font('Helvetica').text('Recipient Signature (Beneficiary/Guardian)', col2X, signatureY + 45);
+    doc.line(col2X, signatureY + 20, col2X + signatureLineLength, signatureY + 20);
+    doc.setFontSize(8).setFont('helvetica', 'normal');
+    doc.text('Recipient Signature (Beneficiary/Guardian)', col2X, signatureY + 20 + signatureTextYOffset);
 
     // Date Received
-    doc.moveTo(col2X, signatureY + 90).lineTo(col2X + signatureLineLength, signatureY + 90).stroke();
-    doc.fontSize(8).font('Helvetica').text('Date Received', col2X, signatureY + 95);
-
-    doc.end();
+    doc.line(col2X, signatureY + 50, col2X + signatureLineLength, signatureY + 50);
+    doc.text('Date Received', col2X, signatureY + 50 + signatureTextYOffset);
 
     // 5. Return PDF
-    const pdfBuffer = await new Promise<Uint8Array>((resolve) => {
-        const chunks: Uint8Array[] = [];
-        doc.on('data', (chunk) => chunks.push(chunk));
-        doc.on('end', () => resolve(new Uint8Array(Buffer.concat(chunks))));
-    });
+    const pdfBuffer = doc.output('arraybuffer');
+    const pdfUint8Array = new Uint8Array(pdfBuffer);
 
-    return new Response(pdfBuffer, {
+    return new Response(pdfUint8Array, {
       status: 200,
       headers: {
         ...corsHeaders,
