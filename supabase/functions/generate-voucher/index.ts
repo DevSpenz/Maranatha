@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import PDFDocument from 'https://esm.sh/pdfkit@0.13.0'
-import svgToPdf from 'https://esm.sh/svg-to-pdfkit@0.1.8'
 import { format } from 'https://esm.sh/date-fns@3.6.0'
 
 // Helper function to format KES currency
@@ -105,6 +104,7 @@ serve(async (req) => {
     let y = PADDING;
 
     // --- Header ---
+    // Use standard PDF fonts (Helvetica, Helvetica-Bold)
     doc.fontSize(18).font('Helvetica-Bold').text('Maranatha FMS', PADDING, y);
     doc.fontSize(10).font('Helvetica').text('Beneficiary Payment Voucher', PADDING, y + 20);
     
