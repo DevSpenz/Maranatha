@@ -6,6 +6,7 @@ import { formatKes } from "@/lib/utils";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button"; // <-- Added missing import
 
 interface PaymentVoucherProps {
     payment: BeneficiaryPayment;
