@@ -38,9 +38,11 @@ export function TrialBalanceReport({ data }: TrialBalanceReportProps) {
             credit: 0 
         },
         { 
-            account: `Net Surplus / (Deficit) - Balancing Entry`, 
-            debit: netSurplus < 0 ? netSurplusAbsolute : 0, 
-            credit: netSurplus > 0 ? netSurplusAbsolute : 0 
+            // If netSurplus > 0 (Credit side is larger), the balancing entry is a DEBIT.
+            // If netSurplus < 0 (Debit side is larger), the balancing entry is a CREDIT.
+            account: `Net ${netSurplus >= 0 ? "Surplus" : "Deficit"} - Balancing Entry`, 
+            debit: netSurplus > 0 ? netSurplusAbsolute : 0, 
+            credit: netSurplus < 0 ? netSurplusAbsolute : 0 
         },
     ];
 

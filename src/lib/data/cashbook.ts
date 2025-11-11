@@ -172,17 +172,19 @@ export async function fetchTrialBalanceData(startDate?: Date, endDate?: Date): P
     let netSurplusCredit = 0;
 
     if (netSurplus > 0) {
-        // If there is a surplus, it's a Credit balance (increase in equity/cash)
-        netSurplusCredit = netSurplus;
+        // If there is a surplus (Credit > Debit), the balancing entry must be a DEBIT
+        // to make the totals equal.
+        netSurplusDebit = netSurplus;
     } else if (netSurplus < 0) {
-        // If there is a deficit, it's a Debit balance (decrease in equity/cash)
-        netSurplusDebit = Math.abs(netSurplus);
+        // If there is a deficit (Debit > Credit), the balancing entry must be a CREDIT
+        // to make the totals equal.
+        netSurplusCredit = Math.abs(netSurplus);
     }
 
-    // Total Debits = Disbursements + Net Deficit (if any)
+    // Total Debits = Disbursements + Net Surplus (if surplus, it's a debit entry)
     const totalDebits = totalDisbursementsDebit + netSurplusDebit;
     
-    // Total Credits = Donations + Net Surplus (if any)
+    // Total Credits = Donations + Net Deficit (if deficit, it's a credit entry)
     const totalCredits = totalDonationsCredit + netSurplusCredit;
 
     return {
