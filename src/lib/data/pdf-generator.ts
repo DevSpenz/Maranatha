@@ -29,9 +29,21 @@ export async function generatePaymentVoucherPdf(paymentId: string, exchangeRate:
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error("PDF Generation Error:", errorData);
-            throw new Error(errorData.error || "Failed to generate PDF voucher.");
+            let errorMessage = `Failed to generate PDF voucher (Status: ${response.status}).`;
+            
+            try {
+                // Attempt to parse JSON error body
+                const errorData = await response.json();
+                console.error("PDF Generation Error Data:", errorData);
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // If JSON parsing fails, try reading as text
+                const errorText = await response.text();
+                console.error("PDF Generation Error Text:", errorText);
+                errorMessage = errorText || errorMessage;
+            }
+            
+            throw new Error(errorMessage);
         }
 
         // Get the filename from the Content-Disposition header
