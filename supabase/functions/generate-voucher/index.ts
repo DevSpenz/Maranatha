@@ -17,6 +17,9 @@ const corsHeaders = {
 const PRIMARY_BLUE = [30, 64, 175]; // Tailwind blue-700 equivalent
 const LIGHT_GRAY = [240, 240, 240];
 
+// Placeholder for the user who recorded the payment (using a fixed name for the voucher)
+const recordedBy = "Administrator"; 
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -88,8 +91,6 @@ serve(async (req) => {
         datePaid: new Date(paymentData.date_paid),
     };
     
-    // Placeholder for the user who recorded the payment (using a fixed name for the voucher)
-    const recordedBy = "Administrator"; 
     const exRate = parseFloat(exchangeRate);
 
     // 4. Generate PDF using jsPDF
@@ -102,10 +103,14 @@ serve(async (req) => {
     const MARGIN = 15;
     let y = MARGIN;
     const LINE_HEIGHT = 6;
-    const VOUCHER_WIDTH = 180; // A4 width is 210mm, so 180mm width is good
+    const VOUCHER_WIDTH = 180; 
+    const CENTER = MARGIN + VOUCHER_WIDTH / 2;
     const RIGHT_ALIGN_X = MARGIN + VOUCHER_WIDTH;
 
-    // --- Header ---
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+
+    // --- 1. Header Block (Logo, Org Info, Voucher Title) ---
     
     // Logo Placeholder (Blue Square)
     const logoSize = 10;
@@ -115,53 +120,69 @@ serve(async (req) => {
     // Organization Name
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
     doc.text('Maranatha Faith Assemblies', MARGIN + logoSize + 5, y + logoSize / 2 + 1);
     
     // Organization Subtitle
-    y += logoSize + 2;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('Turkana North-Rift Region', MARGIN + logoSize + 5, y);
+    doc.text('Turkana North-Rift Region', MARGIN + logoSize + 5, y + logoSize + 2);
     
-    // Right aligned header info
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Voucher ID: ${payment.id.substring(0, 8)}`, RIGHT_ALIGN_X, MARGIN, { align: 'right' });
-    doc.text(`Transaction ID: ${payment.paymentRunId ? payment.paymentRunId.substring(0, 8) : 'N/A'}`, RIGHT_ALIGN_X, MARGIN + LINE_HEIGHT);
-    doc.text(`Date Paid: ${format(payment.datePaid, 'MMMM do, yyyy')}`, RIGHT_ALIGN_X, MARGIN + LINE_HEIGHT * 2);
-    
-    y += LINE_HEIGHT * 3; // Move past the header section
+    y += logoSize + LINE_HEIGHT * 2; // Move y down after org info
 
-    // --- Notes Section ---
-    y += LINE_HEIGHT;
-    doc.setFontSize(12).setFont('helvetica', 'bold').text('Notes:', MARGIN, y);
-    y += LINE_HEIGHT / 2;
+    // Main Title
+    doc.setFontSize(18).setFont('helvetica', 'bold');
+    doc.text('PAYMENT VOUCHER', CENTER, y, { align: 'center' });
     
-    const notesBoxHeight = LINE_HEIGHT * 2;
-    const notesText = payment.notes || 'N/A';
+    y += LINE_HEIGHT * 1.5;
     
-    // Draw light gray background box
-    doc.setFillColor(LIGHT_GRAY[0], LIGHT_GRAY[1], LIGHT_GRAY[2]);
-    doc.rect(MARGIN, y, VOUCHER_WIDTH, notesBoxHeight, 'F');
+    // --- 2. Voucher Metadata (ID, Date, Transaction ID) ---
     
-    // Draw blue left border
-    doc.setDrawColor(PRIMARY_BLUE[0], PRIMARY_BLUE[1], PRIMARY_BLUE[2]);
-    doc.setLineWidth(1);
-    doc.line(MARGIN, y, MARGIN, y + notesBoxHeight);
-    
-    // Draw notes text
     doc.setFontSize(10).setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    doc.text(notesText, MARGIN + 3, y + notesBoxHeight / 2 + 1, { baseline: 'middle', maxWidth: VOUCHER_WIDTH - 5 });
     
-    y += notesBoxHeight + LINE_HEIGHT * 2;
+    // Draw a light gray box for metadata
+    const metaBoxHeight = LINE_HEIGHT * 3;
+    doc.setFillColor(LIGHT_GRAY[0], LIGHT_GRAY[1], LIGHT_GRAY[2]);
+    doc.rect(MARGIN, y, VOUCHER_WIDTH, metaBoxHeight, 'F');
+    
+    const metaX1 = MARGIN + 5;
+    
+    // Left Column (Labels)
+    doc.setFont('helvetica', 'bold');
+    doc.text('Voucher ID:', metaX1, y + LINE_HEIGHT * 0.8);
+    doc.text('Date Paid:', metaX1, y + LINE_HEIGHT * 1.8);
+    doc.text('Transaction ID:', metaX1, y + LINE_HEIGHT * 2.8);
+    
+    // Left Column (Values)
+    doc.setFont('helvetica', 'normal');
+    doc.text(payment.id.substring(0, 8), metaX1 + 30, y + LINE_HEIGHT * 0.8);
+    doc.text(format(payment.datePaid, 'MMMM do, yyyy'), metaX1 + 30, y + LINE_HEIGHT * 1.8);
+    doc.text(payment.paymentRunId ? payment.paymentRunId.substring(0, 8) : 'N/A', metaX1 + 30, y + LINE_HEIGHT * 2.8);
+    
+    y += metaBoxHeight + LINE_HEIGHT;
 
-    // --- Payment Table ---
+    // --- 3. Paid To Details (Beneficiary, Group) ---
+    
+    doc.setFontSize(12).setFont('helvetica', 'bold').text('Paid To:', MARGIN, y);
+    y += LINE_HEIGHT;
+    
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    doc.text('Beneficiary Name:', MARGIN, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(payment.beneficiaryName, MARGIN + 40, y);
+    y += LINE_HEIGHT;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text('Source Group:', MARGIN, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(payment.groupName, MARGIN + 40, y);
+    y += LINE_HEIGHT * 2;
+
+    // --- 4. Payment Table ---
+    
     const tableTop = y;
-    const col1Width = 100;
-    const col2Width = 30;
-    const col3Width = 50;
+    const col1Width = 100; // Description
+    const col2Width = 30;  // Rate
+    const col3Width = 50;  // Amount
     const rowHeight = 8;
 
     // Table Header
@@ -171,14 +192,15 @@ serve(async (req) => {
     doc.setTextColor(0, 0, 0);
     
     doc.text('Description', MARGIN + 2, tableTop + rowHeight / 2 + 1, { baseline: 'middle' });
-    doc.text('Rate', MARGIN + col1Width + col2Width - 2, tableTop + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
-    doc.text('Amount', RIGHT_ALIGN_X - 2, tableTop + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
+    doc.text('Rate (KR/KES)', MARGIN + col1Width + col2Width - 2, tableTop + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
+    doc.text('Amount (KES)', RIGHT_ALIGN_X - 2, tableTop + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
     
     y += rowHeight;
 
     // Table Row 1: Payment Amount
-    doc.setFillColor(255, 255, 255);
-    doc.rect(MARGIN, y, VOUCHER_WIDTH, rowHeight, 'F');
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.1);
+    doc.rect(MARGIN, y, VOUCHER_WIDTH, rowHeight); // Draw border
     doc.setFontSize(10).setFont('helvetica', 'normal');
     doc.text('Beneficiary payment', MARGIN + 2, y + rowHeight / 2 + 1, { baseline: 'middle' });
     doc.text(exRate.toFixed(2), MARGIN + col1Width + col2Width - 2, y + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
@@ -186,52 +208,76 @@ serve(async (req) => {
     y += rowHeight;
 
     // Table Row 2: Total
-    doc.setFillColor(255, 255, 255);
-    doc.rect(MARGIN, y, VOUCHER_WIDTH, rowHeight, 'F');
-    doc.setFontSize(10).setFont('helvetica', 'bold');
-    doc.text('TOTAL AMOUNT PAID', MARGIN + 2, y + rowHeight / 2 + 1, { baseline: 'middle' });
-    doc.text(formatKes(payment.amountKes).replace('Ksh ', ''), RIGHT_ALIGN_X - 2, y + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
-    y += rowHeight;
-    
-    // Final separator line for the table
     doc.setLineWidth(0.5);
-    doc.setDrawColor(0, 0, 0);
-    doc.line(MARGIN, y, RIGHT_ALIGN_X, y);
-    y += LINE_HEIGHT * 4;
+    doc.line(MARGIN, y, RIGHT_ALIGN_X, y); // Top border of total row
+    y += 1; // Small gap
+    
+    doc.setFontSize(12).setFont('helvetica', 'bold');
+    doc.text('TOTAL', MARGIN + 2, y + rowHeight / 2 + 1, { baseline: 'middle' });
+    doc.text(formatKes(payment.amountKes), RIGHT_ALIGN_X - 2, y + rowHeight / 2 + 1, { align: 'right', baseline: 'middle' });
+    y += rowHeight + 1;
+    
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, y, RIGHT_ALIGN_X, y); // Bottom border of total row
+    y += LINE_HEIGHT * 2;
 
-    // --- Signatures Section ---
+    // --- 5. Notes Section ---
+    
+    doc.setFontSize(12).setFont('helvetica', 'bold').text('Payment Notes:', MARGIN, y);
+    y += LINE_HEIGHT / 2;
+    
+    const notesBoxHeight = LINE_HEIGHT * 3;
+    const notesTextContent = payment.notes || 'N/A';
+    
+    // Draw border around notes box
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+    doc.rect(MARGIN, y, VOUCHER_WIDTH, notesBoxHeight);
+    
+    // Draw notes text
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    doc.text(notesTextContent, MARGIN + 2, y + 4, { maxWidth: VOUCHER_WIDTH - 4 });
+    
+    y += notesBoxHeight + LINE_HEIGHT * 2;
+
+    // --- 6. Signatures Section ---
+    
     const col1X = MARGIN;
     const col2X = MARGIN + VOUCHER_WIDTH / 2;
     const sigLineLength = VOUCHER_WIDTH / 2 - 10;
+    const sigY = y + LINE_HEIGHT * 3;
 
-    // Titles
-    doc.setFontSize(10).setFont('helvetica', 'bold');
-    doc.setTextColor(PRIMARY_BLUE[0], PRIMARY_BLUE[1], PRIMARY_BLUE[2]);
-    doc.text('Authorization', col1X, y);
-    doc.text('Recipient', col2X, y);
-    y += LINE_HEIGHT;
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10).setFont('helvetica', 'normal');
-    
-    // Prepared By
-    doc.text(`Prepared by: ${recordedBy}`, col1X, y);
-    
-    // Recipient
-    doc.text(`Beneficiary: ${payment.beneficiaryName}`, col2X, y);
-    y += LINE_HEIGHT * 3;
-
-    // Signature Lines (Minimal)
+    // Signature Lines
     doc.setLineWidth(0.2);
     doc.setDrawColor(0, 0, 0);
     
-    // Prepared By Signature Line
-    doc.line(col1X, y, col1X + sigLineLength, y);
-    doc.setFontSize(8).text('Signature', col1X, y + 3);
+    // Authorization Signature Line
+    doc.line(col1X, sigY, col1X + sigLineLength, sigY);
     
     // Recipient Signature Line
-    doc.line(col2X, y, col2X + sigLineLength, y);
-    doc.text('Signature', col2X, y + 3);
+    doc.line(col2X, sigY, col2X + sigLineLength, sigY);
+    
+    y = sigY + 3;
+    
+    // Titles
+    doc.setFontSize(10).setFont('helvetica', 'bold');
+    doc.text('Authorized By', col1X, y);
+    doc.text('Received By (Beneficiary/Guardian)', col2X, y);
+    
+    y += LINE_HEIGHT;
+    
+    doc.setFontSize(8).setFont('helvetica', 'normal');
+    doc.text(`Name: ${recordedBy}`, col1X, y);
+    doc.text(`Name: ${payment.beneficiaryName}`, col2X, y);
+    
+    y += LINE_HEIGHT;
+    
+    doc.text(`Date: ${format(new Date(), 'yyyy-MM-dd')}`, col1X, y);
+    doc.text(`ID/Phone: N/A`, col2X, y); // Placeholder for ID/Phone
+
+    // --- Footer ---
+    doc.setFont('helvetica', 'italic').setFontSize(8).setTextColor(100);
+    doc.text("System generated by Maranatha FMS", MARGIN, 290);
 
     // 5. Return PDF
     const pdfBuffer = doc.output('arraybuffer');
