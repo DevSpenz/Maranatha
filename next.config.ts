@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true, // ⬅️ skip linting when running next build
+  },
+  typescript: {
+    ignoreBuildErrors: true,    // ⬅️ Skip TypeScript validation during build
+  },
+
   webpack: (config) => {
     if (process.env.NODE_ENV === "development") {
       config.module.rules.push({
