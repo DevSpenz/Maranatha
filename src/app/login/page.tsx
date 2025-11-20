@@ -9,8 +9,16 @@ import { useSession } from '@/components/auth/SessionContextProvider';
 export default function LoginPage() {
   const { user, isLoading } = useSession();
 
-  // The global AuthWrapper handles redirection if user is logged in.
-  // We only need to check if the session is loading here to prevent flicker before AuthWrapper takes over.
+  // Determine the redirect URL dynamically
+  const getRedirectUrl = () => {
+    if (typeof window !== 'undefined') {
+      // Use the current origin for client-side redirection
+      return `${window.location.origin}/`;
+    }
+    // Fallback for server-side rendering (though this component is client-only)
+    return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/';
+  };
+
   if (isLoading) {
     return null;
   }
@@ -38,7 +46,7 @@ export default function LoginPage() {
             }}
             theme="light"
             view="sign_in"
-            redirectTo={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/'}
+            redirectTo={getRedirectUrl()}
           />
         </CardContent>
       </Card>
